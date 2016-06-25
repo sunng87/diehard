@@ -1,5 +1,7 @@
 # diehard
 
+[![Build Status](https://travis-ci.org/sunng87/diehard.svg?branch=master)](https://travis-ci.org/sunng87/diehard)
+
 A Clojure library designed to ... well, that part is up to you.
 
 ## Usage

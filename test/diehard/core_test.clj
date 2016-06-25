@@ -22,4 +22,4 @@
                *executions*))))
   (testing "retry-when"
     (is (= 1 (with-retry {:retry-when (int 0)}
-               *executions*))))))
+               *executions*)))))

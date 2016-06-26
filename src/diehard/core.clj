@@ -6,8 +6,14 @@
             ContextualCallable]
            [net.jodah.failsafe.util Duration]))
 
+(def ^:const allowed-keys #{:retry-if :retry-on :retry-when
+                            :abort-if :abort-on :abort-when
+                            :backoff-ms :max-retries :max-duration-ms :delay-ms})
+
 (defn verify-policy-map-keys [policy-map]
-  )
+  (doseq [k (keys policy-map)]
+    (when-not (allowed-keys k)
+      (throw (IllegalArgumentException. (str "Policy option map contains unknown key " k))))))
 
 (defn retry-policy-from-config [policy-map]
   (verify-policy-map-keys policy-map)
@@ -40,18 +46,16 @@
       (.retryWhen policy (:retry-when policy-map)))
     (when (contains? policy-map :backoff-ms)
       (let [backoff-config (:backoff-ms policy-map)
-            [delay max-delay unit multiplier] backoff-config]
+            [delay max-delay multiplier] backoff-config]
         (if (nil? multiplier)
           (.withBackoff policy delay max-delay TimeUnit/MILLISECONDS)
           (.withBackoff policy delay max-delay TimeUnit/MILLISECONDS multiplier))))
-    (when (contains? policy-map :delay-ms)
-      (let [delay (:delay-ms policy)]
-        (.withDelay policy delay TimeUnit/MILLISECONDS)))
-    (when (contains? policy-map :max-duration-ms)
-      (let [duration (:max-duration-ms policy)]
-        (.withMaxDuration policy duration TimeUnit/MILLISECONDS)))
-    (when (contains? policy-map :max-retries)
-      (.withMaxRetries policy (:max-retries policy-map)))
+    (when-let [delay  (:delay-ms policy-map)]
+      (.withDelay policy delay TimeUnit/MILLISECONDS))
+    (when-let [duration (:max-duration-ms policy-map)]
+      (.withMaxDuration policy duration TimeUnit/MILLISECONDS))
+    (when-let [retries (:max-retries policy-map)]
+      (.withMaxRetries policy retries))
     policy))
 
 (def ^:dynamic *elapsed-time-ms*)
@@ -64,6 +68,6 @@
          (get (reify ContextualCallable
                 (call [_ ^ExecutionContext ctx#]
                   (binding [*elapsed-time-ms* (.toMillis ^Duration (.getElapsedTime ctx#))
-                            *executions* (.getExecutions ctx#)
+                            *executions* (long (.getExecutions ctx#))
                             *start-time-ms* (.toMillis ^Duration (.getStartTime ctx#))]
                        ~@body)))))))

@@ -70,4 +70,11 @@
     (is (= 2 (with-retry {:backoff-ms [10 100]
                           :max-duration-ms 50
                           :retry-if (fn [v _] (< v 10))}
-               *executions*)))))
+               *executions*))))
+  (testing "invalid option given to policy map"
+    (try
+      (with-retry {:unknown-option 1}
+        *executions*)
+      (is false)
+      (catch IllegalArgumentException _
+        (is true)))))

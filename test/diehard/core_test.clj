@@ -44,8 +44,9 @@
         (if (= 1 *executions*)
           (throw (IllegalStateException.))
           *executions*))
-      (catch FailsafeException e
-        (is (instance? IllegalStateException (.getCause e))))))
+      (is false)
+      (catch IllegalStateException _
+        (is true))))
 
   (testing "max retry"
     (is (= 4 (with-retry {:retry-if (fn [v e] (< v 10))
@@ -62,8 +63,9 @@
       (with-retry {:delay-ms 20
                    :max-duration-ms 50}
         (throw (IllegalStateException.)))
-      (catch FailsafeException e
-        (is (instance? IllegalStateException (.getCause e))))))
+      (is false)
+      (catch IllegalStateException _
+        (is true))))
   (testing "delay backoff"
     (is (= 2 (with-retry {:backoff-ms [10 100]
                           :max-duration-ms 50

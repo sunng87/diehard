@@ -1,7 +1,7 @@
 (ns diehard.core
   (:import [java.util.concurrent TimeUnit]
            [net.jodah.failsafe Failsafe RetryPolicy
-            ExecutionContext]
+            ExecutionContext FailsafeException]
            [net.jodah.failsafe.function Predicate BiPredicate
             ContextualCallable]
            [net.jodah.failsafe.util Duration]))
@@ -64,10 +64,13 @@
 
 (defmacro with-retry [opt & body]
   `(let [retry-policy# (retry-policy-from-config ~opt)]
-     (.. (Failsafe/with ^RetryPolicy retry-policy#)
-         (get (reify ContextualCallable
-                (call [_ ^ExecutionContext ctx#]
-                  (binding [*elapsed-time-ms* (.toMillis ^Duration (.getElapsedTime ctx#))
-                            *executions* (long (.getExecutions ctx#))
-                            *start-time-ms* (.toMillis ^Duration (.getStartTime ctx#))]
-                       ~@body)))))))
+     (try
+       (.. (Failsafe/with ^RetryPolicy retry-policy#)
+           (get (reify ContextualCallable
+                  (call [_ ^ExecutionContext ctx#]
+                    (binding [*elapsed-time-ms* (.toMillis ^Duration (.getElapsedTime ctx#))
+                              *executions* (long (.getExecutions ctx#))
+                              *start-time-ms* (.toMillis ^Duration (.getStartTime ctx#))]
+                      ~@body)))))
+       (catch FailsafeException e#
+         (throw (.getCause e#))))))

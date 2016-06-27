@@ -77,4 +77,49 @@
         *executions*)
       (is false)
       (catch IllegalArgumentException _
-        (is true)))))
+        (is true))))
+
+  (testing "listeners"
+    (let [retry-counter (atom 0)
+          failed-attempt-counter (atom 0)
+          complete-counter (atom 0)
+          success-counter (atom 0)]
+      (with-retry {:on-retry (fn [v e] (swap! retry-counter inc))
+                   :on-failed-attempt (fn [v e] (swap! failed-attempt-counter inc))
+                   :on-complete (fn [v e] (swap! complete-counter inc))
+                   :on-success (fn [v] (swap! success-counter inc))
+
+                   :retry-if (fn [v e]
+                               (or (some? e) (< v 10)))}
+        (if (even? *executions*)
+          (throw (IllegalStateException.))
+          *executions*))
+      (are [x y] (= x y)
+        11 @retry-counter
+        11 @failed-attempt-counter
+        1 @complete-counter
+        1 @success-counter))
+    (let [retry-counter (atom 0)
+          failed-attempt-counter (atom 0)
+          failure-counter (atom 0)
+          complete-counter (atom 0)
+          abort-counter (atom 0)]
+      (try
+        (with-retry {:on-retry (fn [v e] (swap! retry-counter inc))
+                     :on-failed-attempt (fn [v e] (swap! failed-attempt-counter inc))
+                     :on-complete (fn [v e] (swap! complete-counter inc))
+                     :on-abort (fn [v e] (swap! abort-counter inc))
+                     :on-failure (fn [v e] (swap! failure-counter inc))
+
+                     :retry-if (fn [v e] true)
+                     :abort-when 11}
+          (if (even? *executions*)
+            (throw (IllegalStateException.))
+            *executions*)
+        (catch IllegalStateException _))
+      (are [x y] (= x y)
+        11 @retry-counter
+        12 @failed-attempt-counter
+        1 @failure-counter
+        1 @complete-counter
+        1 @abort-counter)))))

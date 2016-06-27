@@ -1,14 +1,17 @@
 (ns diehard.core
   (:import [java.util.concurrent TimeUnit]
            [net.jodah.failsafe Failsafe RetryPolicy
-            ExecutionContext FailsafeException]
+            ExecutionContext FailsafeException Listeners]
            [net.jodah.failsafe.function Predicate BiPredicate
             ContextualCallable]
            [net.jodah.failsafe.util Duration]))
 
 (def ^:const allowed-keys #{:retry-if :retry-on :retry-when
                             :abort-if :abort-on :abort-when
-                            :backoff-ms :max-retries :max-duration-ms :delay-ms})
+                            :backoff-ms :max-retries :max-duration-ms :delay-ms
+
+                            :on-abort :on-complete :on-failed-attempt
+                            :on-failure :on-retry :on-success})
 
 (defn verify-policy-map-keys [policy-map]
   (doseq [k (keys policy-map)]
@@ -16,7 +19,6 @@
       (throw (IllegalArgumentException. (str "Policy option map contains unknown key " k))))))
 
 (defn retry-policy-from-config [policy-map]
-  (verify-policy-map-keys policy-map)
   (let [policy (RetryPolicy.)]
     (when (contains? policy-map :abort-if)
       (.abortIf policy (reify BiPredicate
@@ -62,15 +64,50 @@
 (def ^:dynamic *executions*)
 (def ^:dynamic *start-time-ms*)
 
+(defmacro with-context [ctx & body]
+  `(binding [*elapsed-time-ms* (.toMillis ^Duration (.getElapsedTime ~ctx))
+             *executions* (long (.getExecutions ~ctx))
+             *start-time-ms* (.toMillis ^Duration (.getStartTime ~ctx))]
+     ~@body))
+
+(defn listeners-from-config [policy-map]
+  (proxy [Listeners] []
+    (onAbort [result exception context]
+      (when-let [handler (:on-abort policy-map)]
+        (with-context context
+          (handler result exception))))
+    (onComplete [result exception context]
+      (when-let [handler (:on-complete policy-map)]
+        (with-context context
+          (handler result exception))))
+    (onFailedAttempt [result exception context]
+      (when-let [handler (:on-failed-attempt policy-map)]
+        (with-context context
+          (handler result exception))))
+    (onFailure [result exception context]
+      (when-let [handler (:on-failure policy-map)]
+        (with-context context
+          (handler result exception))))
+    (onRetry [result exception context]
+      (when-let [handler (:on-retry policy-map)]
+        (with-context context
+          (handler result exception))))
+    (onSuccess [result context]
+      (when-let [handler (:on-success policy-map)]
+        (with-context context
+          (handler result))))))
+
 (defmacro with-retry [opt & body]
-  `(let [retry-policy# (retry-policy-from-config ~opt)]
-     (try
-       (.. (Failsafe/with ^RetryPolicy retry-policy#)
-           (get (reify ContextualCallable
-                  (call [_ ^ExecutionContext ctx#]
-                    (binding [*elapsed-time-ms* (.toMillis ^Duration (.getElapsedTime ctx#))
-                              *executions* (long (.getExecutions ctx#))
-                              *start-time-ms* (.toMillis ^Duration (.getStartTime ctx#))]
-                      ~@body)))))
-       (catch FailsafeException e#
-         (throw (.getCause e#))))))
+  `(do
+     (verify-policy-map-keys ~opt)
+     (let [retry-policy# (retry-policy-from-config ~opt)
+           listeners# (listeners-from-config ~opt)]
+       (try
+         (.. (Failsafe/with ^RetryPolicy retry-policy#)
+             (with ^Listeners listeners#)
+             (get (reify ContextualCallable
+                    (call [_ ^ExecutionContext ctx#]
+                      (with-context ctx#
+                        ~@body)))))
+         (catch FailsafeException e#
+           (throw (.getCause e#)))))))

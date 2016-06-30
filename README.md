@@ -24,23 +24,50 @@ again, until it mismatch the retry policy or matches the abort
 criteria. The block will return or throw the value or exception from
 the last execution.
 
-Available options:
+### Available options
+
+#### Retry criteria
 
 * `:retry-when` retry when return value is given value
 * `:retry-on` retry on given exception / exceptions(vector) were thrown
 * `:retry-if` specify a function `(fn [return-value
   exception-thrown])`, retry if the function returns true
+
+#### Retry abortion criteria
+
 * `:abort-when` abort retry when return value is given value
 * `:abort-on` abort retry on given exception / exceptions(vector) were
   thrown
 * `:abort-if` specify a function `(fn [return-value
   exception-thrown])`, abort retry if the function returns true
+* `max-retries` abort retry when max attempts reached
+* `max-duration` abort retry when duration reached
+
+#### Delay
+
 * `backoff-ms` specify a vector `[initial-delay-ms max-delay-ms
   multiplier]` to control the delay between each retry, the delay for
   **n**th retry will be `(max (* initial-delay-ms n) max-delay-ms)`
 * `delay-ms` use constant delay between each retry
-* `max-retries` abort retry when max attempts reached
-* `max-duration` abort retry when duration reached
+
+#### Retry Listeners
+
+* `on-abort` accepts a function which takes `result`, `exception` as
+  arguments, called when retry aborted
+* `on-complete` accepts a function which takes `result`, `exception` as
+  arguments, called when exiting `retry` block
+* `on-failed-attempt` accepts a function which takes `result`,
+  `exception` as arguments, called when execution failed (matches
+  retry criteria)
+* `on-failure` accepts a function which takes `result`,
+  `exception` as arguments, called when existing `retry` block with
+  failure (matches retry criteria)
+* `on-success` accepts a function which takes `result` as arguments,
+  called when existing `retry` block with success (mismatches retry
+  criteria)
+* `on-retry` accepts a function which takes `result` as arguments,
+  called when a retry attempted.
+
 
 ## License
 

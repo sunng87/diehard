@@ -1,5 +1,6 @@
 (ns diehard.core
-  (:import [java.util.concurrent TimeUnit]
+  (:import [java.util List]
+           [java.util.concurrent TimeUnit]
            [net.jodah.failsafe Failsafe RetryPolicy
             ExecutionContext FailsafeException Listeners]
            [net.jodah.failsafe.function Predicate BiPredicate
@@ -30,7 +31,8 @@
           (.abortOn policy (reify Predicate
                              (test [_ c]
                                (exps c))))
-          (.abortOn policy (if (vector? exps) exps [exps])))))
+          (let [exps (if (vector? exps) exps [exps])]
+            (.abortOn policy ^List exps)))))
     (when (contains? policy-map :abort-when)
       (.abortWhen policy (:abort-when policy-map)))
     (when (contains? policy-map :retry-if)
@@ -43,7 +45,8 @@
           (.retryOn policy (reify Predicate
                              (test [_ c]
                                (exps c))))
-          (.retryOn policy (if (vector? exps) exps [exps])))))
+          (let [exps (if (vector? exps) exps [exps])]
+            (.retryOn policy ^List exps)))))
     (when (contains? policy-map :retry-when)
       (.retryWhen policy (:retry-when policy-map)))
     (when (contains? policy-map :backoff-ms)
@@ -74,27 +77,27 @@
   (proxy [Listeners] []
     (onAbort [result exception context]
       (when-let [handler (:on-abort policy-map)]
-        (with-context context
+        (with-context ^ExecutionContext context
           (handler result exception))))
     (onComplete [result exception context]
       (when-let [handler (:on-complete policy-map)]
-        (with-context context
+        (with-context ^ExecutionContext context
           (handler result exception))))
     (onFailedAttempt [result exception context]
       (when-let [handler (:on-failed-attempt policy-map)]
-        (with-context context
+        (with-context ^ExecutionContext context
           (handler result exception))))
     (onFailure [result exception context]
       (when-let [handler (:on-failure policy-map)]
-        (with-context context
+        (with-context ^ExecutionContext context
           (handler result exception))))
     (onRetry [result exception context]
       (when-let [handler (:on-retry policy-map)]
-        (with-context context
+        (with-context  ^ExecutionContext context
           (handler result exception))))
     (onSuccess [result context]
       (when-let [handler (:on-success policy-map)]
-        (with-context context
+        (with-context ^ExecutionContext context
           (handler result))))))
 
 (defmacro with-retry [opt & body]

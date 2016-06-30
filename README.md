@@ -40,32 +40,32 @@ the last execution.
   thrown
 * `:abort-if` specify a function `(fn [return-value
   exception-thrown])`, abort retry if the function returns true
-* `max-retries` abort retry when max attempts reached
-* `max-duration` abort retry when duration reached
+* `:max-retries` abort retry when max attempts reached
+* `:max-duration` abort retry when duration reached
 
 #### Delay
 
-* `backoff-ms` specify a vector `[initial-delay-ms max-delay-ms
+* `:backoff-ms` specify a vector `[initial-delay-ms max-delay-ms
   multiplier]` to control the delay between each retry, the delay for
   **n**th retry will be `(max (* initial-delay-ms n) max-delay-ms)`
-* `delay-ms` use constant delay between each retry
+* `:delay-ms` use constant delay between each retry
 
 #### Retry Listeners
 
-* `on-abort` accepts a function which takes `result`, `exception` as
+* `:on-abort` accepts a function which takes `result`, `exception` as
   arguments, called when retry aborted
-* `on-complete` accepts a function which takes `result`, `exception` as
+* `:on-complete` accepts a function which takes `result`, `exception` as
   arguments, called when exiting `retry` block
-* `on-failed-attempt` accepts a function which takes `result`,
+* `:on-failed-attempt` accepts a function which takes `result`,
   `exception` as arguments, called when execution failed (matches
   retry criteria)
-* `on-failure` accepts a function which takes `result`,
+* `:on-failure` accepts a function which takes `result`,
   `exception` as arguments, called when existing `retry` block with
   failure (matches retry criteria)
-* `on-success` accepts a function which takes `result` as arguments,
+* `:on-success` accepts a function which takes `result` as arguments,
   called when existing `retry` block with success (mismatches retry
   criteria)
-* `on-retry` accepts a function which takes `result` as arguments,
+* `:on-retry` accepts a function which takes `result` as arguments,
   called when a retry attempted.
 
 

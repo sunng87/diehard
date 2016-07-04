@@ -4,8 +4,8 @@
            [net.jodah.failsafe CircuitBreaker]))
 
 (def ^:const allowed-circuit-breaker-option-keys
-  #{:failure-threshold :failure-threshold-in
-    :success-threshold :success-threshold-in
+  #{:failure-threshold :failure-threshold-ratio
+    :success-threshold :success-threshold-ratio
     :delay-ms :timeout-ms
 
     :fail-if :fail-on :fail-when
@@ -30,13 +30,13 @@
     (when-let [failure-threshold (:failure-threshold opts)]
       (.withFailureThreshold cb failure-threshold))
 
-    (when-let [[failures executions] (:failure-threshold-in opts)]
+    (when-let [[failures executions] (:failure-threshold-ratio opts)]
       (.withFailureThreshold cb failures executions))
 
     (when-let [success-threshold (:success-threshold opts)]
       (.withSuccessThreshold cb success-threshold))
 
-    (when-let [[successes executions] (:success-threshold-in opts)]
+    (when-let [[successes executions] (:success-threshold-ratio opts)]
       (.withSuccessThreshold cb successes executions))
 
     (when-let [on-open (:on-open opts)]

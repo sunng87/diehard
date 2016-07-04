@@ -99,5 +99,8 @@
   `(def ~name (cb/circuit-breaker ~opts)))
 
 (defmacro with-circuit-breaker [cb & body]
-  `(.. (Failsafe/with ^CircuitBreaker cb)
-       (get (fn [] ~@body))))
+  `(try
+     (.. (Failsafe/with ^CircuitBreaker ~cb)
+         (get (fn [] ~@body)))
+     (catch FailsafeException e#
+       (throw (.getCause e#)))))

@@ -1,7 +1,8 @@
 (ns diehard.core-test
   (:require [clojure.test :refer :all]
             [diehard.core :refer :all])
-  (:import [net.jodah.failsafe FailsafeException]))
+  (:import [net.jodah.failsafe FailsafeException CircuitBreakerOpenException]
+           [net.jodah.failsafe.util Ratio]))
 
 (deftest test-retry
   (testing "retry-on"
@@ -123,3 +124,34 @@
         1 @failure-counter
         1 @complete-counter
         1 @abort-counter)))))
+
+
+
+(deftest test-circuit-breaker-params
+  (testing "failure threshold ratio"
+    (defcircuitbreaker test-cb {:failure-threshold-ratio [7 10]})
+    (is (= (.ratio (Ratio. 7 10)) (.ratio (.getFailureThresholdRatio test-cb)))))
+  (testing "failure threshold"
+    (defcircuitbreaker test-cb {:failure-threshold 7})
+    (is (= 7 (.getFailureThreshold test-cb))))
+  (testing "success threshold ratio"
+    (defcircuitbreaker test-cb {:success-threshold-ratio [10 10]})
+    (is (= (.ratio (Ratio. 10 10)) (.ratio (.getSuccessThresholdRatio test-cb)))))
+  (testing "success threshold"
+    (defcircuitbreaker test-cb {:success-threshold 10})
+    (is (= 10 (.getSuccessThreshold test-cb)))))
+
+
+(deftest test-circuit-breaker
+  (testing "circuit open"
+    (defcircuitbreaker test-cb {:failure-threshold 2
+                                :delay-ms 10})
+    (dotimes [n 5]
+      (try
+        (with-circuit-breaker test-cb
+          (println n)
+          (throw (IllegalStateException.)))
+        (catch Exception e
+          (if (< n 2)
+            (is (instance? IllegalStateException e))
+            (is (instance? CircuitBreakerOpenException e))))))))

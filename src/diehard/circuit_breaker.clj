@@ -48,3 +48,20 @@
     (when-let [on-close (:on-close opts)]
       (.onClose cb (u/fn-as-runnable on-close)))
     cb))
+
+(defn state
+  "Get current state of this circuit breaker, values in `:open`, `:close` and `half-open` "
+  [^CircuitBreaker cb]
+  (cond
+    (.isOpen cb) :open
+    (.isClosed cb) :close
+    :else :half-open))
+
+(defn allow-execution?
+  "Test if this circuit breaker allow code execution. The result is based
+on current state:
+  * `:open` will deny all execution requests
+  * `:close` allows all executions
+  * `:half-open` only allows some of execution requests"
+  [^CircuitBreaker cb]
+  (.allowsExecution cb))

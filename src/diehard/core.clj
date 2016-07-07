@@ -1,10 +1,11 @@
 (ns diehard.core
+  (:require [diehard.util :as u]
+            [diehard.circuit-breaker :as cb])
   (:import [java.util List]
            [java.util.concurrent TimeUnit]
-           [net.jodah.failsafe Failsafe RetryPolicy
+           [net.jodah.failsafe Failsafe RetryPolicy CircuitBreaker
             ExecutionContext FailsafeException Listeners]
-           [net.jodah.failsafe.function Predicate BiPredicate
-            ContextualCallable]
+           [net.jodah.failsafe.function ContextualCallable]
            [net.jodah.failsafe.util Duration]))
 
 (def ^:const allowed-keys #{:retry-if :retry-on :retry-when
@@ -14,39 +15,18 @@
                             :on-abort :on-complete :on-failed-attempt
                             :on-failure :on-retry :on-success})
 
-(defn verify-policy-map-keys [policy-map]
-  (doseq [k (keys policy-map)]
-    (when-not (allowed-keys k)
-      (throw (IllegalArgumentException. (str "Policy option map contains unknown key " k))))))
-
 (defn retry-policy-from-config [policy-map]
   (let [policy (RetryPolicy.)]
     (when (contains? policy-map :abort-if)
-      (.abortIf policy (reify BiPredicate
-                         (test [_ return-value thrown-exception]
-                           ((:abort-if policy-map) return-value thrown-exception)))))
+      (.abortIf policy (u/bipredicate (:abort-if policy-map))))
     (when (contains? policy-map :abort-on)
-      (let [exps (:abort-on policy-map)]
-        (if (fn? exps)
-          (.abortOn policy (reify Predicate
-                             (test [_ c]
-                               (exps c))))
-          (let [exps (if (vector? exps) exps [exps])]
-            (.abortOn policy ^List exps)))))
+      (.abortOn policy (u/predicate-or-value (:abort-on policy-map))))
     (when (contains? policy-map :abort-when)
       (.abortWhen policy (:abort-when policy-map)))
     (when (contains? policy-map :retry-if)
-      (.retryIf policy (reify BiPredicate
-                         (test [_ return-value thrown-exception]
-                           ((:retry-if policy-map) return-value thrown-exception)))))
+      (.retryIf policy (u/bipredicate (:retry-if policy-map))))
     (when (contains? policy-map :retry-on)
-      (let [exps (:retry-on policy-map)]
-        (if (fn? exps)
-          (.retryOn policy (reify Predicate
-                             (test [_ c]
-                               (exps c))))
-          (let [exps (if (vector? exps) exps [exps])]
-            (.retryOn policy ^List exps)))))
+      (.retryOn policy (u/predicate-or-value (:retry-on policy-map))))
     (when (contains? policy-map :retry-when)
       (.retryWhen policy (:retry-when policy-map)))
     (when (contains? policy-map :backoff-ms)
@@ -102,7 +82,7 @@
 
 (defmacro with-retry [opt & body]
   `(do
-     (verify-policy-map-keys ~opt)
+     (u/verify-opt-map-keys ~opt ~allowed-keys)
      (let [retry-policy# (retry-policy-from-config ~opt)
            listeners# (listeners-from-config ~opt)]
        (try
@@ -114,3 +94,13 @@
                         ~@body)))))
          (catch FailsafeException e#
            (throw (.getCause e#)))))))
+
+(defmacro defcircuitbreaker [name opts]
+  `(def ~name (cb/circuit-breaker ~opts)))
+
+(defmacro with-circuit-breaker [cb & body]
+  `(try
+     (.. (Failsafe/with ^CircuitBreaker ~cb)
+         (get (fn [] ~@body)))
+     (catch FailsafeException e#
+       (throw (.getCause e#)))))

@@ -104,13 +104,15 @@
           failed-attempt-counter (atom 0)
           failure-counter (atom 0)
           complete-counter (atom 0)
-          abort-counter (atom 0)]
+          abort-counter (atom 0)
+          retries-exceeded-counter (atom 0)]
       (try
         (with-retry {:on-retry (fn [v e] (swap! retry-counter inc))
                      :on-failed-attempt (fn [v e] (swap! failed-attempt-counter inc))
                      :on-complete (fn [v e] (swap! complete-counter inc))
                      :on-abort (fn [v e] (swap! abort-counter inc))
                      :on-failure (fn [v e] (swap! failure-counter inc))
+                     :on-retries-exceeded (fn [v e] (swap! retries-exceeded-counter inc))
 
                      :retry-if (fn [v e] true)
                      :abort-when 11}
@@ -121,9 +123,10 @@
       (are [x y] (= x y)
         11 @retry-counter
         12 @failed-attempt-counter
-        1 @failure-counter
-        1 @complete-counter
-        1 @abort-counter)))))
+        0 @failure-counter
+        0 @complete-counter
+        1 @abort-counter
+        0 @retries-exceeded-counter)))))
 
 
 
@@ -149,7 +152,6 @@
     (dotimes [n 5]
       (try
         (with-circuit-breaker test-cb
-          (println n)
           (throw (IllegalStateException.)))
         (catch Exception e
           (if (< n 2)

@@ -13,7 +13,7 @@
                             :backoff-ms :max-retries :max-duration-ms :delay-ms
 
                             :on-abort :on-complete :on-failed-attempt
-                            :on-failure :on-retry :on-success})
+                            :on-failure :on-retry :on-retries-exceeded :on-success})
 
 (defn retry-policy-from-config [policy-map]
   (let [policy (RetryPolicy.)]
@@ -78,7 +78,10 @@
     (onSuccess [result context]
       (when-let [handler (:on-success policy-map)]
         (with-context ^ExecutionContext context
-          (handler result))))))
+          (handler result))))
+    (onRetriesExceeded [result exception]
+      (when-let [handler (:on-retries-exceeded policy-map)]
+        (handler result exception)))))
 
 (defmacro with-retry [opt & body]
   `(do

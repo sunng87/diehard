@@ -131,6 +131,11 @@ retry block.
 * `:on-close` a function to be called when state goes `:closed`
 * `:on-half-open` a function to be called when state goes `:half-open`
 
+### Clojure API docs
+
+The API is pretty simple but you can still find API docs
+[here](https://sunng87.github.io/diehard).
+
 ## License
 
 Copyright © 2016 Ning Sun

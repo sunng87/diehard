@@ -8,14 +8,15 @@
            [net.jodah.failsafe.function ContextualCallable]
            [net.jodah.failsafe.util Duration]))
 
-(def ^:const allowed-keys #{:retry-if :retry-on :retry-when
-                            :abort-if :abort-on :abort-when
-                            :backoff-ms :max-retries :max-duration-ms :delay-ms
+(def ^:const ^:no-doc
+  allowed-keys #{:retry-if :retry-on :retry-when
+                 :abort-if :abort-on :abort-when
+                 :backoff-ms :max-retries :max-duration-ms :delay-ms
 
-                            :on-abort :on-complete :on-failed-attempt
-                            :on-failure :on-retry :on-retries-exceeded :on-success})
+                 :on-abort :on-complete :on-failed-attempt
+                 :on-failure :on-retry :on-retries-exceeded :on-success})
 
-(defn retry-policy-from-config [policy-map]
+(defn ^:no-doc retry-policy-from-config [policy-map]
   (let [policy (RetryPolicy.)]
     (when (contains? policy-map :abort-if)
       (.abortIf policy (u/bipredicate (:abort-if policy-map))))
@@ -43,17 +44,23 @@
       (.withMaxRetries policy retries))
     policy))
 
-(def ^:dynamic *elapsed-time-ms*)
-(def ^:dynamic *executions*)
-(def ^:dynamic *start-time-ms*)
+(def ^{:dynamic true
+       :doc "Available in retry block. Contexual value represents time elasped since first attempt"}
+  *elapsed-time-ms*)
+(def ^{:dynamic true
+       :doc "Available in retry block. Contexual value represents execution times"}
+  *executions*)
+(def ^{:dynamic true
+       :doc "Available in retry block. Contexual value represents first attempt time"}
+  *start-time-ms*)
 
-(defmacro with-context [ctx & body]
+(defmacro ^:no-doc with-context [ctx & body]
   `(binding [*elapsed-time-ms* (.toMillis ^Duration (.getElapsedTime ~ctx))
              *executions* (long (.getExecutions ~ctx))
              *start-time-ms* (.toMillis ^Duration (.getStartTime ~ctx))]
      ~@body))
 
-(defn listeners-from-config [policy-map]
+(defn ^:no-doc listeners-from-config [policy-map]
   (proxy [Listeners] []
     (onAbort [result exception context]
       (when-let [handler (:on-abort policy-map)]

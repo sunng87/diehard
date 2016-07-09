@@ -3,7 +3,8 @@
   (:import [java.util.concurrent TimeUnit]
            [net.jodah.failsafe CircuitBreaker]))
 
-(def ^:const allowed-circuit-breaker-option-keys
+(def ^{:const true :no-doc true}
+  allowed-circuit-breaker-option-keys
   #{:failure-threshold :failure-threshold-ratio
     :success-threshold :success-threshold-ratio
     :delay-ms :timeout-ms

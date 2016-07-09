@@ -1,4 +1,4 @@
-(ns diehard.util
+(ns ^:no-doc diehard.util
   (:import [net.jodah.failsafe.function Predicate BiPredicate CheckedRunnable]
            [java.util List]))
 

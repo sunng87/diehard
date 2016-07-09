@@ -50,11 +50,11 @@
     cb))
 
 (defn state
-  "Get current state of this circuit breaker, values in `:open`, `:close` and `half-open` "
+  "Get current state of this circuit breaker, values in `:open`, `:closed` and `half-open` "
   [^CircuitBreaker cb]
   (cond
     (.isOpen cb) :open
-    (.isClosed cb) :close
+    (.isClosed cb) :closed
     :else :half-open))
 
 (defn allow-execution?

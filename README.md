@@ -75,7 +75,7 @@ the last execution.
 ```clj
 (require '[diehard.core :as diehard])
 
-(diehard/defcircuitbreaker test-CB {:failure-threshold-ratio [35 50]
+(diehard/defcircuitbreaker test-cb {:failure-threshold-ratio [35 50]
                                     :delay-ms 1000})
 
 (diehard/with-circuit-breaker test-cb

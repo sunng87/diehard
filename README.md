@@ -2,7 +2,7 @@
 
 [![Build
 Status](https://travis-ci.org/sunng87/diehard.svg?branch=master)](https://travis-ci.org/sunng87/diehard)
-[![Clojars](https://img.shields.io/clojars/v/diehard.svg?maxAge=2592000)]()
+[![Clojars](https://img.shields.io/clojars/v/diehard.svg?maxAge=2592000)](https://clojars.org/diehard)
 [![license](https://img.shields.io/github/license/sunng87/diehard.svg?maxAge=2592000)]()
 
 A Clojure wrapper over [Failsafe](https://github.com/jhalterman/failsafe)

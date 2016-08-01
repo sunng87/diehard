@@ -12,6 +12,7 @@
   allowed-keys #{:retry-if :retry-on :retry-when
                  :abort-if :abort-on :abort-when
                  :backoff-ms :max-retries :max-duration-ms :delay-ms
+                 :jitter-factor :jitter-ms
 
                  :on-abort :on-complete :on-failed-attempt
                  :on-failure :on-retry :on-retries-exceeded :on-success})
@@ -42,6 +43,10 @@
       (.withMaxDuration policy duration TimeUnit/MILLISECONDS))
     (when-let [retries (:max-retries policy-map)]
       (.withMaxRetries policy retries))
+    (when-let [jitter (:jitter-factor policy-map)]
+      (.withJitter policy jitter))
+    (when-let [jitter (:jitter-ms policy-map)]
+      (.withJitter policy jitter TimeUnit/MILLISECONDS))
     policy))
 
 (def ^{:dynamic true

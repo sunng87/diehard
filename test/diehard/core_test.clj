@@ -68,9 +68,10 @@
       (catch IllegalStateException _
         (is true))))
   (testing "delay backoff"
-    (is (= 2 (with-retry {:backoff-ms [10 100]
+    (is (= 2 (with-retry {:backoff-ms [10 1000]
                           :max-duration-ms 50
-                          :retry-if (fn [v _] (< v 10))}
+                          :retry-if (constantly true)}
+               (Thread/sleep 10)
                *executions*))))
   (testing "invalid option given to policy map"
     (try
@@ -133,16 +134,16 @@
 (deftest test-circuit-breaker-params
   (testing "failure threshold ratio"
     (defcircuitbreaker test-cb {:failure-threshold-ratio [7 10]})
-    (is (= (.ratio (Ratio. 7 10)) (.ratio (.getFailureThresholdRatio test-cb)))))
+    (is (= (.ratio (Ratio. 7 10)) (.ratio (.getFailureThreshold test-cb)))))
   (testing "failure threshold"
     (defcircuitbreaker test-cb {:failure-threshold 7})
-    (is (= 7 (.getFailureThreshold test-cb))))
+    (is (= 7 (.numerator (.getFailureThreshold test-cb)))))
   (testing "success threshold ratio"
     (defcircuitbreaker test-cb {:success-threshold-ratio [10 10]})
-    (is (= (.ratio (Ratio. 10 10)) (.ratio (.getSuccessThresholdRatio test-cb)))))
+    (is (= (.ratio (Ratio. 10 10)) (.ratio (.getSuccessThreshold test-cb)))))
   (testing "success threshold"
     (defcircuitbreaker test-cb {:success-threshold 10})
-    (is (= 10 (.getSuccessThreshold test-cb)))))
+    (is (= 10 (.numerator (.getSuccessThreshold test-cb))))))
 
 
 (deftest test-circuit-breaker

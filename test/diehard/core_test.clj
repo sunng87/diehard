@@ -145,6 +145,16 @@
     (defcircuitbreaker test-cb {:success-threshold 10})
     (is (= 10 (.numerator (.getSuccessThreshold test-cb))))))
 
+(deftest test-retry-policy-params
+  (testing "retry policy param"
+    (defretrypolicy rp {:delay-ms 1000
+                        :max-duration-ms 2000
+                        :jitter-factor 0.5
+                        :max-retries 10})
+    (is (= 1000 (.. rp (getDelay) (toMillis))))
+    (is (= 2000 (.. rp (getMaxDuration) (toMillis))))
+    (is (= 0.5 (.. rp (getJitterFactor))))
+    (is (= 10 (.. rp (getMaxRetries))))))
 
 (deftest test-circuit-breaker
   (testing "circuit open"

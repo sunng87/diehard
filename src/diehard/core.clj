@@ -151,8 +151,12 @@
   `(def ~name (cb/circuit-breaker ~opts)))
 
 (defmacro with-circuit-breaker [cb & body]
-  `(try
-     (.. (Failsafe/with ^CircuitBreaker ~cb)
-         (get (fn [] ~@body)))
-     (catch FailsafeException e#
-       (throw (.getCause e#)))))
+  `(let [opts# (if-not (map? ~cb)
+                 {:circuitbreaker ~cb}
+                 ~cb)
+         cb# (:circuitbreaker opts#)
+         failsafe# (Failsafe/with cb#)]
+     (try
+       (.get failsafe# (fn [] ~@body))
+       (catch FailsafeException e#
+         (throw (.getCause e#))))))

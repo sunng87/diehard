@@ -17,7 +17,9 @@
                  :jitter-factor :jitter-ms
 
                  :on-abort :on-complete :on-failed-attempt
-                 :on-failure :on-retry :on-retries-exceeded :on-success})
+                 :on-failure :on-retry :on-retries-exceeded :on-success
+
+                 :fallback})
 
 (defn ^:no-doc retry-policy-from-config [policy-map]
   (if-let [policy (:policy policy-map)]
@@ -105,6 +107,13 @@
         (when-let [handler (:on-retries-exceeded policy-map)]
           (handler result exception))))))
 
+(defn fallback [opts]
+  (when-let [fb (:fallback opts)]
+    (u/fn-as-bi-function
+     (if-not (fn? fb)
+       (constantly fb)
+       fb))))
+
 (defmacro defretrypolicy [name opts]
   `(do
      (u/verify-opt-map-keys ~opts ~allowed-keys)
@@ -119,14 +128,18 @@
   `(do
      (u/verify-opt-map-keys ~opt ~allowed-keys)
      (let [retry-policy# (retry-policy-from-config ~opt)
-           listeners# (listeners-from-config ~opt)]
+           listeners# (listeners-from-config ~opt)
+           fallback# (fallback ~opt)
+
+           failsafe# (.. (Failsafe/with ^RetryPolicy retry-policy#)
+                         (with ^Listeners listeners#))
+           failsafe# (if fallback# (.withFallback failsafe# fallback#) failsafe#)]
        (try
-         (.. (Failsafe/with ^RetryPolicy retry-policy#)
-             (with ^Listeners listeners#)
-             (get (reify ContextualCallable
-                    (call [_ ^ExecutionContext ctx#]
-                      (with-context ctx#
-                        ~@body)))))
+         (.get failsafe#
+               (reify ContextualCallable
+                 (call [_ ^ExecutionContext ctx#]
+                   (with-context ctx#
+                     ~@body))))
          (catch FailsafeException e#
            (throw (.getCause e#)))))))
 

@@ -1,5 +1,6 @@
 (ns ^:no-doc diehard.util
-  (:import [net.jodah.failsafe.function Predicate BiPredicate CheckedRunnable]
+  (:import [net.jodah.failsafe.function Predicate BiPredicate
+            CheckedRunnable CheckedBiFunction]
            [java.util List]))
 
 (defn verify-opt-map-keys [opt-map allowed-keys]
@@ -20,3 +21,8 @@
 (defn fn-as-runnable [f]
   (reify CheckedRunnable
     (run [_] (f))))
+
+(defn fn-as-bi-function [f]
+  (reify CheckedBiFunction
+    (apply [this t u]
+      (f t u))))

@@ -127,7 +127,18 @@
         0 @failure-counter
         0 @complete-counter
         1 @abort-counter
-        0 @retries-exceeded-counter)))))
+        0 @retries-exceeded-counter))))
+
+  (testing "fallback value"
+    (is (= 5 (with-retry {:fallback 5 :max-retries 10} (throw (Exception.)))))
+    (is (= 10 (with-retry {:fallback (fn [t v] v) :retry-if (fn [v e] (< v 10))}
+                *executions*))))
+
+  (testing "predefined policy"
+    (defretrypolicy the-test-policy
+      {:retry-if (fn [v e] (< v 10))})
+
+    (is (= 10 (with-retry {:policy the-test-policy} *executions*)))))
 
 
 

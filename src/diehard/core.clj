@@ -9,17 +9,22 @@
            [net.jodah.failsafe.util Duration]))
 
 (def ^:const ^:no-doc
-  allowed-keys #{:policy :listener
+  policy-allowed-keys #{:policy
 
-                 :retry-if :retry-on :retry-when
-                 :abort-if :abort-on :abort-when
-                 :backoff-ms :max-retries :max-duration-ms :delay-ms
-                 :jitter-factor :jitter-ms
+                        :retry-if :retry-on :retry-when
+                        :abort-if :abort-on :abort-when
+                        :backoff-ms :max-retries :max-duration-ms :delay-ms
+                        :jitter-factor :jitter-ms
 
-                 :on-abort :on-complete :on-failed-attempt
-                 :on-failure :on-retry :on-retries-exceeded :on-success
+                        :fallback})
 
-                 :fallback})
+(def ^:const ^:no-doc listener-allowed-keys
+  #{:listener
+    :on-abort :on-complete :on-failed-attempt
+    :on-failure :on-retry :on-retries-exceeded :on-success})
+
+(def ^:const ^:no-doc allowed-keys
+  (clojure.set/union policy-allowed-keys listener-allowed-keys #{:fallback}))
 
 (defn ^:no-doc retry-policy-from-config [policy-map]
   (if-let [policy (:policy policy-map)]
@@ -116,17 +121,16 @@
 
 (defmacro defretrypolicy [name opts]
   `(do
-     (u/verify-opt-map-keys ~opts ~allowed-keys)
+     (u/verify-opt-map-keys ~opts ~policy-allowed-keys)
      (def ~name (retry-policy-from-config ~opts))))
 
 (defmacro deflistener [name opts]
   `(do
-     (u/verify-opt-map-keys ~opts ~allowed-keys)
+     (u/verify-opt-map-keys ~opts ~listener-allowed-keys)
      (def ~name (listeners-from-config ~opts))))
 
 (defmacro with-retry [opt & body]
   `(do
-     (u/verify-opt-map-keys ~opt ~allowed-keys)
      (let [retry-policy# (retry-policy-from-config ~opt)
            listeners# (listeners-from-config ~opt)
            fallback# (fallback ~opt)

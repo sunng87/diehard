@@ -1,5 +1,6 @@
 (ns diehard.core
-  (:require [diehard.util :as u]
+  (:require [clojure.set :as set]
+            [diehard.util :as u]
             [diehard.circuit-breaker :as cb])
   (:import [java.util List]
            [java.util.concurrent TimeUnit]
@@ -14,9 +15,7 @@
                         :retry-if :retry-on :retry-when
                         :abort-if :abort-on :abort-when
                         :backoff-ms :max-retries :max-duration-ms :delay-ms
-                        :jitter-factor :jitter-ms
-
-                        :fallback})
+                        :jitter-factor :jitter-ms})
 
 (def ^:const ^:no-doc listener-allowed-keys
   #{:listener
@@ -24,7 +23,7 @@
     :on-failure :on-retry :on-retries-exceeded :on-success})
 
 (def ^:const ^:no-doc allowed-keys
-  (clojure.set/union policy-allowed-keys listener-allowed-keys #{:fallback}))
+  (set/union policy-allowed-keys listener-allowed-keys #{:fallback}))
 
 (defn ^:no-doc retry-policy-from-config [policy-map]
   (if-let [policy (:policy policy-map)]
@@ -131,6 +130,7 @@
 
 (defmacro with-retry [opt & body]
   `(do
+     (u/verify-opt-map-keys ~opt ~allowed-keys)
      (let [retry-policy# (retry-policy-from-config ~opt)
            listeners# (listeners-from-config ~opt)
            fallback# (fallback ~opt)

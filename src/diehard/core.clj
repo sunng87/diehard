@@ -28,7 +28,7 @@
 (defn ^:no-doc retry-policy-from-config [policy-map]
   (if-let [policy (:policy policy-map)]
 
-    policy
+    (.copy policy)
 
     (let [policy (RetryPolicy.)]
       (when (contains? policy-map :abort-if)

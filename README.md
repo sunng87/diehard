@@ -97,6 +97,27 @@ You can put together all those retry policies in a `defretrypolicy`.
   )
 ```
 
+##### Fallback
+
+* `:fallback` fallback value or handler function when retry blocks
+  exists with failure.
+
+```clojure
+;; return 5 when attempts failure
+(with-retry {:fallback 5}
+  ;; ...
+  )
+
+;; return fallback handler function result when failed
+(with-retry {:fallback (fn [exp value]
+                         ;; exp: exception thrown from last attempt
+                         ;; value: value returned from last attempt
+                         )}
+  ;; ...
+  )
+
+```
+
 ### Circuit breaker protected block
 
 ```clj

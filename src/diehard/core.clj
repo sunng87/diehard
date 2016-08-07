@@ -280,6 +280,27 @@ And use `:policy` option in option map.
   ;; your code here
   )
 ```
+
+##### Fallback
+
+* `:fallback` fallback value or handler function when retry blocks
+  exists with failure.
+
+```clojure
+;; return 5 when attempts failure
+(with-retry {:fallback 5}
+  ;; ...
+  )
+
+;; return fallback handler function result when failed
+(with-retry {:fallback (fn [exp value]
+                         ;; exp: exception thrown from last attempt
+                         ;; value: value returned from last attempt
+                         )}
+  ;; ...
+  )
+
+```
 "}
   with-retry [opt & body]
   `(do

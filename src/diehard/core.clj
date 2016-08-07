@@ -293,9 +293,9 @@ And use `:policy` option in option map.
   )
 
 ;; return fallback handler function result when failed
-(with-retry {:fallback (fn [exp value]
-                         ;; exp: exception thrown from last attempt
+(with-retry {:fallback (fn [value exception]
                          ;; value: value returned from last attempt
+                         ;; exp: exception thrown from last attempt
                          )}
   ;; ...
   )

@@ -109,9 +109,9 @@ You can put together all those retry policies in a `defretrypolicy`.
   )
 
 ;; return fallback handler function result when failed
-(with-retry {:fallback (fn [exp value]
-                         ;; exp: exception thrown from last attempt
+(with-retry {:fallback (fn [value exp]
                          ;; value: value returned from last attempt
+                         ;; exp: exception thrown from last attempt
                          )}
   ;; ...
   )

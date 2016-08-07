@@ -131,7 +131,11 @@
 
   (testing "fallback value"
     (is (= 5 (with-retry {:fallback 5 :max-retries 10} (throw (Exception.)))))
-    (is (= 10 (with-retry {:fallback (fn [t v] v) :retry-if (fn [v e] (< v 10))}
+    (is (= 10 (with-retry {:fallback (fn [v e]
+                                       (is (= v 10))
+                                       (is (nil? e))
+                                       v)
+                           :retry-if (fn [v e] (< v 10))}
                 *executions*))))
 
   (testing "predefined policy"

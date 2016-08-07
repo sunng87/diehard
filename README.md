@@ -51,6 +51,22 @@ the last execution.
   multiplier]` to control the delay between each retry, the delay for
   **n**th retry will be `(max (* initial-delay-ms n) max-delay-ms)`
 * `:delay-ms` use constant delay between each retry
+* `:jitter-factor` random factor for each delay
+* `:jitter-ms` random time `(-jitter-ms, jitter-ms)` adds to each delay
+
+##### Use pre-defined policy
+
+You can put together all those retry policies in a `defretrypolicy`.
+
+```clojure
+(diehard/defretrypolicy policy
+  {:max-retries 5
+   :backoff-ms [1000 10000]})
+
+(diehard/with-retry {:policy policy}
+  ;; your code here
+  )
+```
 
 ##### Retry Listeners
 
@@ -69,6 +85,17 @@ the last execution.
   criteria)
 * `:on-retry` accepts a function which takes `result` as arguments,
   called when a retry attempted.
+
+##### Use predefined listeners
+
+```clojure
+(diehard/deflistener listener
+  {:on-retry (fn [return-value exception-thrown] (println "retried"))})
+
+(diehard/with-retry {:policy policy :listener listener}
+  ;; your code here
+  )
+```
 
 ### Circuit breaker protected block
 

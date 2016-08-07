@@ -111,24 +111,177 @@
         (when-let [handler (:on-retries-exceeded policy-map)]
           (handler result exception))))))
 
-(defn fallback [opts]
+(defn ^:no-doc fallback [opts]
   (when-let [fb (:fallback opts)]
     (u/fn-as-bi-function
      (if-not (fn? fb)
        (constantly fb)
        fb))))
 
-(defmacro defretrypolicy [name opts]
+(defmacro ^{:doc "Predefined retry policy.
+#### Available options
+
+##### Retry criteria
+
+* `:retry-when` retry when return value is given value
+* `:retry-on` retry on given exception / exceptions(vector) were thrown
+* `:retry-if` specify a function `(fn [return-value
+  exception-thrown])`, retry if the function returns true
+
+##### Retry abortion criteria
+
+* `:abort-when` abort retry when return value is given value
+* `:abort-on` abort retry on given exception / exceptions(vector) were
+  thrown
+* `:abort-if` specify a function `(fn [return-value
+  exception-thrown])`, abort retry if the function returns true
+* `:max-retries` abort retry when max attempts reached
+* `:max-duration` abort retry when duration reached
+
+##### Delay
+
+* `:backoff-ms` specify a vector `[initial-delay-ms max-delay-ms
+  multiplier]` to control the delay between each retry, the delay for
+  **n**th retry will be `(max (* initial-delay-ms n) max-delay-ms)`
+* `:delay-ms` use constant delay between each retry
+* `:jitter-factor` random factor for each delay
+* `:jitter-ms` random time `(-jitter-ms, jitter-ms)` adds to each delay
+
+##### Use pre-defined policy
+
+You can put together all those retry policies in a `defretrypolicy`.
+And use `:policy` option in option map.
+
+```clojure
+(diehard/defretrypolicy policy
+  {:max-retries 5
+   :backoff-ms [1000 10000]})
+
+(diehard/with-retry {:policy policy}
+  ;; your code here
+  )
+```
+"}
+  defretrypolicy [name opts]
   `(do
      (u/verify-opt-map-keys ~opts ~policy-allowed-keys)
      (def ~name (retry-policy-from-config ~opts))))
 
-(defmacro deflistener [name opts]
+(defmacro ^{:doc "Predefined listener.
+##### Retry Listeners
+
+* `:on-abort` accepts a function which takes `result`, `exception` as
+  arguments, called when retry aborted
+* `:on-complete` accepts a function which takes `result`, `exception` as
+  arguments, called when exiting `retry` block
+* `:on-failed-attempt` accepts a function which takes `result`,
+  `exception` as arguments, called when execution failed (matches
+  retry criteria)
+* `:on-failure` accepts a function which takes `result`,
+  `exception` as arguments, called when existing `retry` block with
+  failure (matches retry criteria)
+* `:on-success` accepts a function which takes `result` as arguments,
+  called when existing `retry` block with success (mismatches retry
+  criteria)
+* `:on-retry` accepts a function which takes `result` as arguments,
+  called when a retry attempted.
+
+##### Use predefined listeners
+
+```clojure
+(diehard/deflistener listener
+  {:on-retry (fn [return-value exception-thrown] (println \"retried\"))})
+
+(diehard/with-retry {:policy policy :listener listener}
+  ;; your code here
+  )
+```
+"}
+  deflistener [name opts]
   `(do
      (u/verify-opt-map-keys ~opts ~listener-allowed-keys)
      (def ~name (listeners-from-config ~opts))))
 
-(defmacro with-retry [opt & body]
+(defmacro ^{:doc "Retry policy protected block.
+If the return value of or exception thrown from the code block matches
+the criteria of your retry policy, the code block will be executed
+again, until it mismatch the retry policy or matches the abort
+criteria. The block will return or throw the value or exception from
+the last execution.
+
+#### Available options
+
+##### Retry criteria
+
+* `:retry-when` retry when return value is given value
+* `:retry-on` retry on given exception / exceptions(vector) were thrown
+* `:retry-if` specify a function `(fn [return-value
+  exception-thrown])`, retry if the function returns true
+
+##### Retry abortion criteria
+
+* `:abort-when` abort retry when return value is given value
+* `:abort-on` abort retry on given exception / exceptions(vector) were
+  thrown
+* `:abort-if` specify a function `(fn [return-value
+  exception-thrown])`, abort retry if the function returns true
+* `:max-retries` abort retry when max attempts reached
+* `:max-duration` abort retry when duration reached
+
+##### Delay
+
+* `:backoff-ms` specify a vector `[initial-delay-ms max-delay-ms
+  multiplier]` to control the delay between each retry, the delay for
+  **n**th retry will be `(max (* initial-delay-ms n) max-delay-ms)`
+* `:delay-ms` use constant delay between each retry
+* `:jitter-factor` random factor for each delay
+* `:jitter-ms` random time `(-jitter-ms, jitter-ms)` adds to each delay
+
+##### Use pre-defined policy
+
+You can put together all those retry policies in a `defretrypolicy`.
+And use `:policy` option in option map.
+
+```clojure
+(diehard/defretrypolicy policy
+  {:max-retries 5
+   :backoff-ms [1000 10000]})
+
+(diehard/with-retry {:policy policy}
+  ;; your code here
+  )
+```
+
+##### Retry Listeners
+
+* `:on-abort` accepts a function which takes `result`, `exception` as
+  arguments, called when retry aborted
+* `:on-complete` accepts a function which takes `result`, `exception` as
+  arguments, called when exiting `retry` block
+* `:on-failed-attempt` accepts a function which takes `result`,
+  `exception` as arguments, called when execution failed (matches
+  retry criteria)
+* `:on-failure` accepts a function which takes `result`,
+  `exception` as arguments, called when existing `retry` block with
+  failure (matches retry criteria)
+* `:on-success` accepts a function which takes `result` as arguments,
+  called when existing `retry` block with success (mismatches retry
+  criteria)
+* `:on-retry` accepts a function which takes `result` as arguments,
+  called when a retry attempted.
+
+##### Use predefined listeners
+
+```clojure
+(diehard/deflistener listener
+  {:on-retry (fn [return-value exception-thrown] (println \"retried\"))})
+
+(diehard/with-retry {:policy policy :listener listener}
+  ;; your code here
+  )
+```
+"}
+  with-retry [opt & body]
   `(do
      (u/verify-opt-map-keys ~opt ~allowed-keys)
      (let [retry-policy# (retry-policy-from-config ~opt)
@@ -147,10 +300,71 @@
          (catch FailsafeException e#
            (throw (.getCause e#)))))))
 
-(defmacro defcircuitbreaker [name opts]
+(defmacro ^{:doc "Define a circuit breaker with option.
+#### Available options
+
+There options are available when creating circuit breaker in
+`defcircuitbreaker`.
+
+##### Failure criteria
+
+All the three `fail` options share same meaning with similar option in
+retry block.
+
+* `:fail-if`
+* `:fail-on`
+* `:fail-when`
+* `:timeout-ms` while give all you code a timeout is best practice in
+  application level, circuit breaker also provides a timeout for
+  marking a long running block as failure
+
+
+##### Delay and threshold
+
+* `:delay-ms` required. the delay for `:open` circuit breaker to turn
+  into `:half-open`.
+* `:failure-threshold`
+* `:failure-threshold-ratio`
+* `:success-threshold`
+* `:success-threshold-ratio` All these four option is to determine at
+  what condition the circuit breaker is open.
+
+##### Listeners
+
+* `:on-open` a function to be called when state goes `:open`
+* `:on-close` a function to be called when state goes `:closed`
+* `:on-half-open` a function to be called when state goes `:half-open`
+"}
+  defcircuitbreaker [name opts]
   `(def ~name (cb/circuit-breaker ~opts)))
 
-(defmacro with-circuit-breaker [cb & body]
+(defmacro ^{:doc "Circuit breaker protected block.
+
+```clj
+(require '[diehard.core :as diehard])
+
+(diehard/defcircuitbreaker test-cb {:failure-threshold-ratio [35 50]
+                                    :delay-ms 1000})
+
+(diehard/with-circuit-breaker test-cb
+  ;; your protected code here
+  )
+```
+
+In this scenario, if the circuit breaker protected code block fails 35
+times in 50 executions, as defined in `:failure-threshold-ratio`, the
+`test-cb` is entering into `:open` state. When circuit breaker is
+open, all execution requests will be rejected immediately.
+
+After `:delay-ms`, the circuit breaker will be `:half-open`. At the
+moment, 50 execution will be allowed, to test the state to see if it's
+recovered. If success, the circuit breaker is back to `:closed`
+state. Otherwise, it will be `:open` again.
+
+You can always check circuit breaker state with
+`diehard.circuitbreaker/state`.
+"}
+  with-circuit-breaker [cb & body]
   `(let [opts# (if-not (map? ~cb)
                  {:circuitbreaker ~cb}
                  ~cb)

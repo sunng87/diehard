@@ -4,4 +4,4 @@ after_success: |
     lein2 codox && \
     sudo pip install ghp-import && \
     ghp-import -n target/codox && \
-    git push -qf https://${TOKEN}@github.com/${TRAVIS_REPO_SLUG}.git gh-pages
+    git push -qf https://${TOKEN}@github.com/${TRAVIS_REPO_SLUG}.git gh-pages > /dev/null 2>&1

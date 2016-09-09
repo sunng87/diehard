@@ -315,13 +315,13 @@ And use `:policy` option in option map.
            failsafe# (if fallback#
                        (.withFallback ^SyncFailsafe failsafe#
                                       ^CheckedBiFunction fallback#)
-                       failsafe#)]
+                       failsafe#)
+           callable# (reify ContextualCallable
+                       (call [_ ^ExecutionContext ctx#]
+                         (with-context ctx#
+                           ~@body)))]
        (try
-         (.get ^SyncFailsafe failsafe#
-               ^ContextualCallable (reify ContextualCallable
-                                     (call [_ ^ExecutionContext ctx#]
-                                       (with-context ctx#
-                                         ~@body))))
+         (.get ^SyncFailsafe failsafe# ^ContextualCallable callable#)
          (catch FailsafeException e#
            (throw (.getCause e#)))))))
 

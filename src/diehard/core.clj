@@ -5,8 +5,8 @@
   (:import [java.util List]
            [java.util.concurrent TimeUnit]
            [net.jodah.failsafe Failsafe RetryPolicy CircuitBreaker
-            ExecutionContext FailsafeException Listeners]
-           [net.jodah.failsafe.function ContextualCallable]
+            ExecutionContext FailsafeException Listeners SyncFailsafe]
+           [net.jodah.failsafe.function CheckedBiFunction ContextualCallable]
            [net.jodah.failsafe.util Duration]))
 
 (def ^:const ^:no-doc
@@ -311,13 +311,16 @@ And use `:policy` option in option map.
 
            failsafe# (.. (Failsafe/with ^RetryPolicy retry-policy#)
                          (with ^Listeners listeners#))
-           failsafe# (if fallback# (.withFallback failsafe# fallback#) failsafe#)]
+           failsafe# (if fallback#
+                       (.withFallback ^SyncFailsafe failsafe#
+                                      ^CheckedBiFunction fallback#)
+                       failsafe#)]
        (try
-         (.get failsafe#
-               (reify ContextualCallable
-                 (call [_ ^ExecutionContext ctx#]
-                   (with-context ctx#
-                     ~@body))))
+         (.get ^SyncFailsafe failsafe#
+               ^ContextualCallable (reify ContextualCallable
+                                     (call [_ ^ExecutionContext ctx#]
+                                       (with-context ctx#
+                                         ~@body))))
          (catch FailsafeException e#
            (throw (.getCause e#)))))))
 
@@ -390,8 +393,8 @@ You can always check circuit breaker state with
                  {:circuitbreaker ~cb}
                  ~cb)
          cb# (:circuitbreaker opts#)
-         failsafe# (Failsafe/with cb#)]
+         failsafe# (Failsafe/with ^CircuitBreaker cb#)]
      (try
-       (.get failsafe# (fn [] ~@body))
+       (.get ^SyncFailsafe failsafe# ^Callable (fn [] ~@body))
        (catch FailsafeException e#
          (throw (.getCause e#))))))

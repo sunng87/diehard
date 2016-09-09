@@ -1,4 +1,4 @@
-(defproject diehard "0.3.1-SNAPSHOT"
+(defproject diehard "0.3.1"
   :description "A Failsafe wrapper for Clojure"
   :url "http://github.com/sunng87/diehard"
   :license {:name "Eclipse Public License"

@@ -5,7 +5,8 @@
   (:import [java.util List]
            [java.util.concurrent TimeUnit]
            [net.jodah.failsafe Failsafe RetryPolicy CircuitBreaker
-            ExecutionContext FailsafeException Listeners SyncFailsafe]
+            ExecutionContext FailsafeException Listeners SyncFailsafe
+            CircuitBreakerOpenException]
            [net.jodah.failsafe.function CheckedBiFunction ContextualCallable]
            [net.jodah.failsafe.util Duration]))
 
@@ -396,5 +397,7 @@ You can always check circuit breaker state with
          failsafe# (Failsafe/with ^CircuitBreaker cb#)]
      (try
        (.get ^SyncFailsafe failsafe# ^Callable (fn [] ~@body))
+       (catch CircuitBreakerOpenException e#
+         e#)
        (catch FailsafeException e#
          (throw (.getCause e#))))))

@@ -174,7 +174,7 @@
 (deftest test-circuit-breaker
   (testing "circuit open"
     (defcircuitbreaker test-cb {:failure-threshold 2
-                                :delay-ms 10})
+                                :delay-ms 100000})
     (dotimes [n 5]
       (try
         (with-circuit-breaker test-cb

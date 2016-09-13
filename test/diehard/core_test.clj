@@ -28,8 +28,10 @@
                                       (= v 0))}
                *executions*))))
   (testing "retry-when"
-    (is (= 1 (with-retry {:retry-when 0}
-               *executions*))))
+    (is (= 2 (with-retry {:retry-when 0}
+               (if (= 1 *executions*)
+                 (throw (Exception.))
+                 *executions*)))))
   (testing "abort-when"
     (is (= 1 (with-retry {:abort-when 1
                           :retry-if (fn [v e] (< v 10))}

@@ -1,5 +1,17 @@
 # Change Log
 
+## [0.3.2] - 2016-10-01
+
+### Changed
+
+- Remove some reflections
+
+## [0.3.1] - 2016-09-09
+
+### Changed
+
+- Update Failsafe to 0.9.3
+
 ## [0.3.0] - 2016-08-07
 
 ### Added

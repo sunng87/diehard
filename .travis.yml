@@ -1,5 +1,7 @@
 language: clojure
-jdk: oraclejdk8
+jdk:
+  - oraclejdk8
+  - oraclejdk7
 after_success: |
     lein2 codox && \
     sudo pip install ghp-import && \

@@ -185,3 +185,9 @@
           (if (< n 2)
             (is (instance? IllegalStateException e))
             (is (instance? CircuitBreakerOpenException e))))))))
+
+(deftest opt-eval-count
+  (let [eval-counter (atom 0)]
+    (with-retry {:retry-when (do (swap! eval-counter inc) nil)}
+      "some value")
+    (is (= @eval-counter 1))))

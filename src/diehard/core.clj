@@ -164,9 +164,9 @@ And use `:policy` option in option map.
 ```
 "}
   defretrypolicy [name opts]
-  `(do
-     (u/verify-opt-map-keys ~opts ~policy-allowed-keys)
-     (def ~name (retry-policy-from-config ~opts))))
+  `(let [the-opts# ~opts]
+     (u/verify-opt-map-keys the-opts# ~policy-allowed-keys)
+     (def ~name (retry-policy-from-config the-opts#))))
 
 (defmacro ^{:doc "Predefined listener.
 ##### Retry Listeners
@@ -199,9 +199,9 @@ And use `:policy` option in option map.
 ```
 "}
   deflistener [name opts]
-  `(do
-     (u/verify-opt-map-keys ~opts ~listener-allowed-keys)
-     (def ~name (listeners-from-config ~opts))))
+  `(let [the-opts# ~opts]
+     (u/verify-opt-map-keys the-opts# ~listener-allowed-keys)
+     (def ~name (listeners-from-config the-opts#))))
 
 (defmacro ^{:doc "Retry policy protected block.
 If the return value of or exception thrown from the code block matches
@@ -304,11 +304,11 @@ And use `:policy` option in option map.
 ```
 "}
   with-retry [opt & body]
-  `(do
-     (u/verify-opt-map-keys ~opt ~allowed-keys)
-     (let [retry-policy# (retry-policy-from-config ~opt)
-           listeners# (listeners-from-config ~opt)
-           fallback# (fallback ~opt)
+  `(let [the-opt# ~opt]
+     (u/verify-opt-map-keys the-opt# ~allowed-keys)
+     (let [retry-policy# (retry-policy-from-config the-opt#)
+           listeners# (listeners-from-config the-opt#)
+           fallback# (fallback the-opt#)
 
            failsafe# (.. (Failsafe/with ^RetryPolicy retry-policy#)
                          (with ^Listeners listeners#))

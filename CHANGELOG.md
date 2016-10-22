@@ -1,5 +1,12 @@
 # Change Log
 
+## [0.3.5] - 2016-10-22
+
+### Changed
+
+- Update Failsafe to 0.9.5, bring back JDK7 support
+- Fixed options being evaluated multiple times
+
 ## [0.3.3] - 2016-10-15
 
 ### Changed
@@ -36,6 +43,7 @@
 
 - Circuit breaker block
 
+[0.3.5]: https://github.com/sunng87/diehard/compare/0.3.3...0.3.5
 [0.3.3]: https://github.com/sunng87/diehard/compare/0.3.2...0.3.3
 [0.3.2]: https://github.com/sunng87/diehard/compare/0.3.1...0.3.2
 [0.3.1]: https://github.com/sunng87/diehard/compare/0.3.0...0.3.1

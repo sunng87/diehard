@@ -191,3 +191,15 @@
     (with-retry {:retry-when (do (swap! eval-counter inc) nil)}
       "some value")
     (is (= @eval-counter 1))))
+
+(deftest test-circuit-breaker-with-retry-block
+  (testing "circuit open within retry block"
+    (defcircuitbreaker test-cb {:failure-threshold 2
+                                :delay-ms 100000})
+    (try
+      (with-retry {:circuit-breaker test-cb
+                   :max-retries 100}
+        (throw (IllegalStateException.)))
+      (is false)
+      (catch Exception e
+        (is (instance? CircuitBreakerOpenException e))))))

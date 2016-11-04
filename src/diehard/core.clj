@@ -11,7 +11,7 @@
            [net.jodah.failsafe.util Duration]))
 
 (def ^:const ^:no-doc
-  policy-allowed-keys #{:policy
+  policy-allowed-keys #{:policy :circuit-breaker
 
                         :retry-if :retry-on :retry-when
                         :abort-if :abort-on :abort-when
@@ -207,8 +207,9 @@ And use `:policy` option in option map.
 If the return value of or exception thrown from the code block matches
 the criteria of your retry policy, the code block will be executed
 again, until it mismatch the retry policy or matches the abort
-criteria. The block will return or throw the value or exception from
-the last execution.
+criteria. The block will return the value or throw exception from
+the last execution. If `:circuit-breaker` is set, it will throw
+ `CircuitBreakerOpenException` when the breaker becomes open.
 
 #### Available options
 
@@ -280,6 +281,7 @@ And use `:policy` option in option map.
 (diehard/with-retry {:policy policy :listener listener}
   ;; your code here
   )
+
 ```
 
 ##### Fallback
@@ -301,6 +303,10 @@ And use `:policy` option in option map.
   ;; ...
   )
 
+##### Circuit breaker
+* `:circuit-breaker` a circuit breaker created from `defcircuitbreaker`.
+It will work together with retry policy as quit criteria.
+
 ```
 "}
   with-retry [opt & body]
@@ -312,6 +318,9 @@ And use `:policy` option in option map.
 
            failsafe# (.. (Failsafe/with ^RetryPolicy retry-policy#)
                          (with ^Listeners listeners#))
+           failsafe# (if-let [cb# (:circuit-breaker the-opt#)]
+                       (.with ^SyncFailsafe failsafe# ^CircuitBreaker cb#)
+                       failsafe#)
            failsafe# (if fallback#
                        (.withFallback ^SyncFailsafe failsafe#
                                       ^CheckedBiFunction fallback#)
@@ -322,6 +331,8 @@ And use `:policy` option in option map.
                            ~@body)))]
        (try
          (.get ^SyncFailsafe failsafe# ^ContextualCallable callable#)
+         (catch CircuitBreakerOpenException e#
+           (throw e#))
          (catch FailsafeException e#
            (throw (.getCause e#)))))))
 
@@ -385,6 +396,10 @@ After `:delay-ms`, the circuit breaker will be `:half-open`. At the
 moment, 50 execution will be allowed, to test the state to see if it's
 recovered. If success, the circuit breaker is back to `:closed`
 state. Otherwise, it will be `:open` again.
+
+The block will throw `CircuitBreakerOpenException` when the circuit breaker
+is open and skip execution of inner forms. Otherwise it will return the value
+or throw the exception raised from inner.
 
 You can always check circuit breaker state with
 `diehard.circuitbreaker/state`.

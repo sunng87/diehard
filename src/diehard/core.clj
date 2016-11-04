@@ -303,11 +303,12 @@ And use `:policy` option in option map.
   ;; ...
   )
 
+```
+
 ##### Circuit breaker
 * `:circuit-breaker` a circuit breaker created from `defcircuitbreaker`.
 It will work together with retry policy as quit criteria.
 
-```
 "}
   with-retry [opt & body]
   `(let [the-opt# ~opt]

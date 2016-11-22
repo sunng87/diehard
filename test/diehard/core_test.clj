@@ -144,7 +144,17 @@
     (defretrypolicy the-test-policy
       {:retry-if (fn [v e] (< v 10))})
 
-    (is (= 10 (with-retry {:policy the-test-policy} *executions*)))))
+    (is (= 10 (with-retry {:policy the-test-policy} *executions*))))
+
+  (testing "RuntimeException"
+    (let [retries (atom 0)]
+      (try
+        (with-retry {:max-retries 1
+                     :on-retry (fn [v e] (swap! retries inc))}
+          (throw (RuntimeException.)))
+        (is false)
+        (catch RuntimeException _
+          (is (= 1 @retries)))))))
 
 
 

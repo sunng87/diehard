@@ -1,5 +1,11 @@
 # Change Log
 
+## [0.5.0] - 2016-11-25
+
+### Changed
+
+- Updated Failsafe to 1.0.0
+
 ## [0.4.0] - 2016-11-04
 
 ### Added
@@ -49,6 +55,7 @@
 
 - Circuit breaker block
 
+[0.4.0]: https://github.com/sunng87/diehard/compare/0.4.0...0.5.0
 [0.4.0]: https://github.com/sunng87/diehard/compare/0.3.5...0.4.0
 [0.3.5]: https://github.com/sunng87/diehard/compare/0.3.3...0.3.5
 [0.3.3]: https://github.com/sunng87/diehard/compare/0.3.2...0.3.3

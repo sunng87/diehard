@@ -414,6 +414,6 @@ You can always check circuit breaker state with
      (try
        (.get ^SyncFailsafe failsafe# ^Callable (fn [] ~@body))
        (catch CircuitBreakerOpenException e#
-         e#)
+         (throw e#))
        (catch FailsafeException e#
          (throw (.getCause e#))))))

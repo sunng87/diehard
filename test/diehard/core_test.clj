@@ -191,6 +191,7 @@
       (try
         (with-circuit-breaker test-cb
           (throw (IllegalStateException.)))
+        (is false)
         (catch Exception e
           (if (< n 2)
             (is (instance? IllegalStateException e))

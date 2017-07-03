@@ -5,40 +5,43 @@
   (try-acquire [this] [this permits] [this permits wait-time]))
 
 (defn- refill [rate-limiter]
-  (dosync
-   ;; refill
-   (let [now (System/currentTimeMillis)]
-     (alter (.-reserved-tokens rate-limiter)
-            (fn [tokens]
-              (max (- (.-max-tokens rate-limiter))
-                   (- tokens (* (- now @(.-last-refill-ts rate-limiter))
-                                (.-rate rate-limiter))))))
-     (ref-set (.-last-refill-ts rate-limiter) now))))
+  ;; refill
+  (let [now (System/currentTimeMillis)]
+    (swap! (.-state rate-limiter)
+           (fn [state]
+             (-> state
+                 (update :reserved-tokens
+                         #(max (- (.-max-tokens rate-limiter))
+                               (- % (* (- now (:last-refill-ts state))
+                                       (.-rate rate-limiter)))))
+                 (assoc :last-refill-ts now))))))
 
 (defn- acquire-sleep-ms [rate-limiter permits]
-  (dosync
-   (let [pending-tokens (alter (.-reserved-tokens rate-limiter) + permits)]
-     (if (<= pending-tokens 0)
-       0
-       ;; time as milliseconds
-       (long (/ pending-tokens (.-rate rate-limiter)))))))
+  (let [{pending-tokens :reserved-tokens} (swap! (.-state rate-limiter)
+                                                 update :reserved-tokens + permits)]
+    (if (<= pending-tokens 0)
+      0
+      ;; time as milliseconds
+      (long (/ pending-tokens (.-rate rate-limiter))))))
 
 (defn- try-acquire-sleep-ms [rate-limiter permits max-wait-ms]
-  (dosync
-   (let [current-pending-tokens @(.-reserved-tokens rate-limiter)
-         pending-tokens (alter (.-reserved-tokens rate-limiter)
-                               (fn [pending-tokens]
-                                 ;; test if we can pass in wait period
-                                 (if (<= (- (+ pending-tokens permits)
-                                            (* max-wait-ms (.-rate rate-limiter)))
-                                         0)
-                                   (+ pending-tokens permits)
-                                   pending-tokens)))]
-     (if (= pending-tokens current-pending-tokens)
-       false
-       (if (<= pending-tokens 0)
-         0
-         (long (/ pending-tokens (.-rate rate-limiter))))))))
+  (try
+    (let [{pending-tokens :reserved-tokens}
+          (swap! (.-state rate-limiter)
+                 (fn [state]
+                   (update state :reserved-tokens
+                           (fn [pending-tokens]
+                             ;; test if we can pass in wait period
+                             (if (<= (- (+ pending-tokens permits)
+                                        (* max-wait-ms (.-rate rate-limiter)))
+                                     0)
+                               (+ pending-tokens permits)
+                               (throw (ex-info "Not enough quota." {})))))))]
+      (if (<= pending-tokens 0)
+        0
+        (long (/ pending-tokens (.-rate rate-limiter)))))
+    (catch clojure.lang.ExceptionInfo _
+      false)))
 
 (defn- do-acquire [rate-limiter permits]
   (refill rate-limiter)
@@ -50,7 +53,7 @@
 
 (defrecord TokenBucketRateLimiter [rate max-tokens
                                    ;; internal state
-                                   reserved-tokens last-refill-ts]
+                                   state]
   IRateLimiter
   (acquire! [this]
     (acquire! this 1))
@@ -73,4 +76,5 @@
 
 (defn rate-limiter [rate max-tokens]
   (TokenBucketRateLimiter. (/ (double rate) 1000) max-tokens
-                           (ref (double 0)) (ref (System/currentTimeMillis))))
+                           (atom {:reserved-tokens (double 0)
+                                  :last-refill-ts (System/currentTimeMillis)})))

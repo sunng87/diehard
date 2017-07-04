@@ -1,6 +1,6 @@
 (ns diehard.rate-limiter-test
   (:require  [clojure.test :as t]
-             [diehard.ratelimiter :as r])
+             [diehard.rate-limiter :as r])
   (:import [java.util.concurrent Executors]))
 
 (t/deftest rate-limiter-test

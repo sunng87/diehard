@@ -1,4 +1,4 @@
-(ns diehard.ratelimiter)
+(ns diehard.rate-limiter)
 
 (defprotocol IRateLimiter
   (acquire! [this] [this permits])

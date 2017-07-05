@@ -1,8 +1,16 @@
 (ns diehard.rate-limiter)
 
 (defprotocol IRateLimiter
-  (acquire! [this] [this permits])
-  (try-acquire [this] [this permits] [this permits wait-time]))
+  (acquire!
+    [this]
+    [this permits]
+    "Acquire given number of permits. It will block until there are permits available.")
+  (try-acquire
+    [this]
+    [this permits]
+    [this permits wait-time]
+    "Try to acquire given number of permits, allows blocking for at most `wait-ms` milliseconds.
+    Return true if there are enough permits in permitted time."))
 
 (defn- refill [rate-limiter]
   ;; refill
@@ -36,7 +44,7 @@
                                         (* max-wait-ms (.-rate rate-limiter)))
                                      0)
                                (+ pending-tokens permits)
-                               (throw (ex-info "Not enough quota." {})))))))]
+                               (throw (ex-info "Not enough permits." {})))))))]
       (if (<= pending-tokens 0)
         0
         (long (/ pending-tokens (.-rate rate-limiter)))))
@@ -74,7 +82,11 @@
             (Thread/sleep sleep))
           true)))))
 
-(defn rate-limiter [rate max-tokens]
-  (TokenBucketRateLimiter. (/ (double rate) 1000) max-tokens
+(defn rate-limiter
+  "Create a default rate limiter with:
+  * `rate`: permits per second
+  * `max-cached-tokens`: the max size of tokens that the bucket can cache when it's idle"
+  [rate max-cached-tokens]
+  (TokenBucketRateLimiter. (/ (double rate) 1000) max-cached-tokens
                            (atom {:reserved-tokens (double 0)
                                   :last-refill-ts (System/currentTimeMillis)})))

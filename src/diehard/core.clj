@@ -1,7 +1,8 @@
 (ns diehard.core
   (:require [clojure.set :as set]
             [diehard.util :as u]
-            [diehard.circuit-breaker :as cb])
+            [diehard.circuit-breaker :as cb]
+            [diehard.rate-limiter :as rl])
   (:import [java.util List]
            [java.util.concurrent TimeUnit]
            [net.jodah.failsafe Failsafe RetryPolicy CircuitBreaker
@@ -417,3 +418,15 @@ You can always check circuit breaker state with
          (throw e#))
        (catch FailsafeException e#
          (throw (.getCause e#))))))
+
+(defmacro
+  ^{:doc ""}
+  defratelimiter [name opts]
+  `(def ~name (rl/rate-limiter ~opts)))
+
+(defmacro
+  ^{:doc ""}
+  with-rate-limiter [rl & body]
+  `(do
+     (rl/acquire! ~rl)
+     ~@body))

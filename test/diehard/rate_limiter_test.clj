@@ -8,7 +8,7 @@
     (let [rate 1000
           threads 32
           pool (Executors/newFixedThreadPool threads)
-          rl (r/rate-limiter rate rate)
+          rl (r/rate-limiter {:rate rate})
           counter (atom 0)
           time-secs 2]
       (doseq [_ (range threads)]

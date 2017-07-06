@@ -214,3 +214,19 @@
       (is false)
       (catch Exception e
         (is (instance? CircuitBreakerOpenException e))))))
+
+(deftest test-rate-limiter
+  (testing "base case"
+    (defratelimiter my-rl {:rate 150})
+    (defratelimiter my-rl2 {:rate 150})
+    (let [counter0 (atom 0)
+          counter1 (atom 0)
+          counter2 (atom 0)]
+      (letfn [(my-fn [c] (swap! c inc))]
+        (time (while (< @counter0 200)
+                (my-fn counter0)))
+        (time (while (< @counter1 99)
+                (with-rate-limiter my-rl (my-fn counter1))))
+        (time (while (< @counter2 200)
+                (with-rate-limiter my-rl2 (my-fn counter2))))
+        (is true)))))

@@ -1,4 +1,5 @@
-(ns diehard.rate-limiter)
+(ns diehard.rate-limiter
+  (:require [diehard.util :as u]))
 
 (defprotocol IRateLimiter
   (acquire!
@@ -82,11 +83,19 @@
             (Thread/sleep sleep))
           true)))))
 
+(def ^{:const true :no-doc true}
+  allowed-rate-limiter-option-keys
+  #{:rate :max-cached-tokens})
+
 (defn rate-limiter
   "Create a default rate limiter with:
   * `rate`: permits per second
   * `max-cached-tokens`: the max size of tokens that the bucket can cache when it's idle"
-  [rate max-cached-tokens]
-  (TokenBucketRateLimiter. (/ (double rate) 1000) max-cached-tokens
-                           (atom {:reserved-tokens (double 0)
-                                  :last-refill-ts (System/currentTimeMillis)})))
+  [opts]
+  (u/verify-opt-map-keys opts allowed-rate-limiter-option-keys)
+  (if-let [rate (:rate opts)]
+    (let [max-cached-tokens (:max-cached-tokens opts rate)]
+        (TokenBucketRateLimiter. (/ (double rate) 1000) max-cached-tokens
+                                 (atom {:reserved-tokens (double 0)
+                                        :last-refill-ts (System/currentTimeMillis)})))
+    (throw (IllegalArgumentException. ":rate is required for rate-limiter"))))

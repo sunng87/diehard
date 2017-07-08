@@ -214,3 +214,26 @@
       (is false)
       (catch Exception e
         (is (instance? CircuitBreakerOpenException e))))))
+
+(defmacro timed [& body]
+  `(let [start-ts# (System/currentTimeMillis)]
+     ~@body
+     (- (System/currentTimeMillis) start-ts#)))
+
+(deftest test-rate-limiter
+  (testing "base case"
+    (defratelimiter my-rl {:rate 150})
+    (defratelimiter my-rl2 {:rate 150})
+    (letfn [(my-fn [c] (swap! c inc))]
+      (let [counter0 (atom 0)
+            counter1 (atom 0)
+            counter2 (atom 0)
+            t1 (timed (while (< @counter0 200)
+                        (my-fn counter0)))
+            t2 (timed (while (< @counter1 99)
+                        (with-rate-limiter my-rl (my-fn counter1))))
+            t3 (timed (while (< @counter2 200)
+                        (with-rate-limiter my-rl2 (my-fn counter2))))]
+        (is (< t1 1000))
+        (is (< t2 1000))
+        (is (> t3 1000))))))

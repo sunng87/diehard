@@ -20,9 +20,11 @@
            (fn [state]
              (-> state
                  (update :reserved-tokens
-                         #(max (- (.-max-tokens rate-limiter))
-                               (- % (* (- now (:last-refill-ts state))
-                                       (.-rate rate-limiter)))))
+                         #(if (> (:last-refill-ts state) 0)
+                            (max (- (.-max-tokens rate-limiter))
+                                 (- % (* (- now (:last-refill-ts state))
+                                         (.-rate rate-limiter))))
+                            %))
                  (assoc :last-refill-ts now))))))
 
 (defn- acquire-sleep-ms [rate-limiter permits]
@@ -96,6 +98,6 @@
   (if-let [rate (:rate opts)]
     (let [max-cached-tokens (:max-cached-tokens opts rate)]
         (TokenBucketRateLimiter. (/ (double rate) 1000) max-cached-tokens
-                                 (atom {:reserved-tokens (- (double rate))
-                                        :last-refill-ts (System/currentTimeMillis)})))
+                                 (atom {:reserved-tokens (double 0)
+                                        :last-refill-ts (long 0)})))
     (throw (IllegalArgumentException. ":rate is required for rate-limiter"))))

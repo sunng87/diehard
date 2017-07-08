@@ -426,7 +426,15 @@ You can always check circuit breaker state with
 
 (defmacro
   ^{:doc ""}
-  with-rate-limiter [rl & body]
-  `(do
-     (rl/acquire! ~rl)
+  with-rate-limiter [opts & body]
+  `(let [opts# (if (satisfies? rl/IRateLimiter ~opts)
+                 {:ratelimiter ~opts}
+                 ~opts)
+         rate-limiter# (:ratelimiter opts#)
+         max-wait# (:max-wait-ms opts#)
+         permits# (:permits opts# 1)]
+     (if (nil? max-wait#)
+       (rl/acquire! rate-limiter# permits#)
+       (when-not (rl/try-acquire rate-limiter# permits# max-wait#)
+         (throw (ex-info "Execution throttled." {:throttled true}))))
      ~@body))

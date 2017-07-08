@@ -420,12 +420,38 @@ You can always check circuit breaker state with
          (throw (.getCause e#))))))
 
 (defmacro
-  ^{:doc ""}
+  ^{:doc "Create a rate limiter with options.
+
+* `:rate` execution permits per second.
+* `:max-cached-tokens` the max size of permits we can cache when idle"}
   defratelimiter [name opts]
   `(def ~name (rl/rate-limiter ~opts)))
 
 (defmacro
-  ^{:doc ""}
+  ^{:doc "Rate Limiter protected block. Code execution in this block is throttled
+to given rate. Use `defratelimiter` to define a ratelimiter and use it as option:
+
+```clojure
+;; create a rate limiter for 100 executions for second
+(defratelimiter myfl {:rate 100})
+
+(with-rate-limiter {:ratelimiter myfl}
+  ;; your task here
+  )
+```
+
+By default it will wait forever until there is permits available. You can also specify a
+`max-wait-ms` to wait for a given time. If there's no permits in this period, this block
+will throw a Clojure `ex-info`, with `ex-data` as
+
+```clojure
+{:throttled true
+ :rate-limiter rate-limiter
+ :max-wait-ms max-wait}
+```
+
+If your execution has a greater graininess, you can customize the permits for this execution
+by setting `:permits` option."}
   with-rate-limiter [opts & body]
   `(let [opts# (if (satisfies? rl/IRateLimiter ~opts)
                  {:ratelimiter ~opts}
@@ -436,5 +462,7 @@ You can always check circuit breaker state with
      (if (nil? max-wait#)
        (rl/acquire! rate-limiter# permits#)
        (when-not (rl/try-acquire rate-limiter# permits# max-wait#)
-         (throw (ex-info "Execution throttled." {:throttled true}))))
+         (throw (ex-info "Execution throttled." {:throttled true
+                                                 :rate-limiter rate-limiter#
+                                                 :max-wait-ms max-wait#}))))
      ~@body))

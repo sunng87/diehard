@@ -39,6 +39,21 @@ execution if the open condition triggered.
   (fetch-data-from-the-moon))
 ```
 
+### Rate limiter
+
+A rate limiter protects your code block to run specified times per
+second. It will block or throw exception depends on how your
+customization.
+
+```clojure
+(require '[diehard.core :as dh])
+
+(defratelimiter my-rl {:rate 100})
+
+(dh/with-rate-limiter my-rl
+  (send-people-to-the-moon))
+```
+
 Both block support a few options, check our documentation
 [here](https://sunng87.github.io/diehard).
 

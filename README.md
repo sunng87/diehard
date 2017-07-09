@@ -5,9 +5,9 @@ Status](https://travis-ci.org/sunng87/diehard.svg?branch=master)](https://travis
 [![Clojars](https://img.shields.io/clojars/v/diehard.svg?maxAge=2592000)](https://clojars.org/diehard)
 [![license](https://img.shields.io/github/license/sunng87/diehard.svg?maxAge=2592000)]()
 
-Clojure wrapper over
-[Failsafe](https://github.com/jhalterman/failsafe), which is library
-focusing on handling failures for large scale application.
+Clojure library to provide safety guard to your application.
+Some of the functionality is wrapper over
+[Failsafe](https://github.com/jhalterman/failsafe).
 
 ## Usage
 
@@ -41,9 +41,9 @@ execution if the open condition triggered.
 
 ### Rate limiter
 
-A rate limiter protects your code block to run specified times per
-second. It will block or throw exception depends on how your
-customization.
+A rate limiter protects your code block to run limited times per
+second. It will block or throw exception depends on your
+configuration.
 
 ```clojure
 (require '[diehard.core :as dh])
@@ -54,12 +54,14 @@ customization.
   (send-people-to-the-moon))
 ```
 
-Both block support a few options, check our documentation
+## Docs
+
+More options can be found in the documentation
 [here](https://sunng87.github.io/diehard).
 
 ## License
 
-Copyright © 2016 Ning Sun
+Copyright © 2016-2017 Ning Sun
 
 Distributed under the Eclipse Public License either version 1.0 or (at
 your option) any later version.

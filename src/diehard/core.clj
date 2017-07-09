@@ -445,13 +445,25 @@ By default it will wait forever until there is permits available. You can also s
 will throw a Clojure `ex-info`, with `ex-data` as
 
 ```clojure
-{:throttled true
- :rate-limiter rate-limiter
- :max-wait-ms max-wait}
+
+(try
+  (with-rate-limiter {:ratelimiter myfl
+                      :max-wait-ms 1000}
+    ;; your task here
+    )
+  (catch Exception e
+    (is (:throttled (ex-data e)))))
 ```
 
 If your execution has a greater graininess, you can customize the permits for this execution
-by setting `:permits` option."}
+by setting `:permits` option.
+
+```clojure
+(with-rate-limiter {:ratelimiter myfl
+                    :permits (size-of-the-task)}
+  ;; your task here
+  )
+```"}
   with-rate-limiter [opts & body]
   `(let [opts# (if (satisfies? rl/IRateLimiter ~opts)
                  {:ratelimiter ~opts}

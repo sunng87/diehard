@@ -1,5 +1,5 @@
 (defproject diehard "0.6.1-SNAPSHOT"
-  :description "A Failsafe wrapper for Clojure"
+  :description "Safety utilities for Clojure"
   :url "http://github.com/sunng87/diehard"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}

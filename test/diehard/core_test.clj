@@ -236,4 +236,27 @@
                         (with-rate-limiter my-rl2 (my-fn counter2))))]
         (is (< t1 1000))
         (is (< t2 1000))
-        (is (> t3 1000))))))
+        (is (> t3 1000)))))
+
+  (testing "max wait"
+    (defratelimiter my-rl3 {:rate 150})
+    (letfn [(my-fn [c] (swap! c inc))]
+      (let [counter0 (atom 0)]
+        (try
+          (while (< @counter0 200)
+            (with-rate-limiter {:ratelimiter my-rl
+                                :max-wait-ms 1}
+              (my-fn counter0)))
+          (is false)
+          (catch Exception e
+            (is (:throttled (ex-data e))))))))
+
+  (testing "permits"
+    (defratelimiter my-rl4 {:rate 150})
+    (letfn [(my-fn [c] (swap! c inc))]
+      (let [counter0 (atom 0)
+            t0 (timed (while (< @counter0 99)
+                        (with-rate-limiter {:ratelimiter my-rl4
+                                            :permits 2}
+                          (my-fn counter0))))]
+        (is (> t0 1000))))))

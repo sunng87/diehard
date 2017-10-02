@@ -2,7 +2,8 @@
   (:require [clojure.set :as set]
             [diehard.util :as u]
             [diehard.circuit-breaker :as cb]
-            [diehard.rate-limiter :as rl])
+            [diehard.rate-limiter :as rl]
+            [diehard.bulkhead :as bh])
   (:import [java.util List]
            [java.util.concurrent TimeUnit]
            [net.jodah.failsafe Failsafe RetryPolicy CircuitBreaker
@@ -478,3 +479,50 @@ by setting `:permits` option.
                                                  :rate-limiter rate-limiter#
                                                  :max-wait-ms max-wait#}))))
      ~@body))
+
+(defmacro
+  ^{:doc "Create bulkhead config from option map.
+* `concurrency` the max number of concurrent executions"}
+  defbulkhead [name opts]
+  `(def ~name (bh/bulkhead ~opts)))
+
+(defmacro
+  ^{:doc "Bulkhead block. Only given number of executions is allowed to be executed in parallel.
+
+```clojure
+;; create a bulkhead that limit concurrency to 3
+(defbulkhead mybh {:concurrency 3})
+
+(with-bulkhead {:bulkhead mybh}
+  ;; your task here
+  )
+```
+
+By default it will wait until there is permits available for execution.
+
+You can add `max-wait-ms` option for change this behavior. If no permits is available
+when `max-wait-ms` exceeded, an `ex-info` will be thrown with `ex-data` as `{:bulkhead true :max-wait-ms wait-timeout}`
+
+```clojure
+(try
+  (with-bulkhead {:bulkhead mybh
+                  :max-wait-ms 1000}
+    ;; your task here
+    )
+  (catch Exception e
+    (is (::bulkhead (ex-data e)))))
+```
+"}
+  with-bulkhead [opts & body]
+  `(let [opts# (if (satisfies? bh/IBulkhead ~opts)
+                 {:bulkhead ~opts}
+                 ~opts)
+         {bulkhead# :bulkhead
+          timeout-ms# :max-wait-ms} opts#]
+     (if (nil? timeout-ms#)
+       (bh/acquire! bulkhead#)
+       (bh/acquire! bulkhead# timeout-ms#))
+     (try
+       ~@body
+       (finally
+         (bh/release! bulkhead#)))))

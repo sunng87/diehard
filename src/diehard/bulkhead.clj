@@ -1,5 +1,10 @@
 (ns diehard.bulkhead
+  (:require [diehard.util :as u])
   (:import [java.util.concurrent Semaphore TimeUnit]))
+
+(def ^{:const true :no-doc true}
+  allowed-bulkhead-option-keys
+  #{:concurrency})
 
 (defprotocol IBulkhead
   (acquire! [this] [this timeout-ms])
@@ -10,21 +15,16 @@
   (acquire! [this] (.acquire ^Semaphore semaphore))
   (acquire! [this timeout-ms]
     (when-not (.tryAcquire ^Semaphore semaphore timeout-ms TimeUnit/MILLISECONDS)
-      (throw (ex-info "Failed to acquire bulkhead" {::bulkhead :failed
-                                                    ::timeout timeout-ms}))))
+      (throw (ex-info "Failed to acquire semaphore" {:bulkhead true
+                                                     :max-wait-ms timeout-ms}))))
   (release! [this]
     (.release ^Semaphore semaphore)))
 
-(defn bulkhead [concurrency]
-  (Bulkhead. (Semaphore. concurrency)))
-
-(defmacro with-bulkhead [bulkhead-opts & body]
-  `(let [{bulkhead# :bulkhead
-          timeout-ms# :timeout-ms} ~bulkhead-opts]
-     (if (nil? timeout-ms#)
-       (acquire! bulkhead#)
-       (acquire! bulkhead# timeout-ms#))
-     (try
-       ~@body
-       (finally
-         (release! bulkhead#)))))
+(defn bulkhead
+  "Create bulkhead with given configuration:
+  * `concurrency`: the max number of concurrent executions"
+  [opts]
+  (u/verify-opt-map-keys opts allowed-bulkhead-option-keys)
+  (if-let [concurrency (:concurrency opts)]
+    (Bulkhead. (Semaphore. concurrency))
+    (throw (IllegalArgumentException. ":concurrency is required for bulkhead"))))

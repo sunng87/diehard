@@ -47,7 +47,7 @@
                                         (* max-wait-ms (.-rate rate-limiter)))
                                      0)
                                (+ pending-tokens permits)
-                               (throw (ex-info "Not enough permits." {})))))))]
+                               (throw (ex-info "Not enough permits." {:rate-limiter true})))))))]
       (if (<= pending-tokens 0)
         0
         (long (/ pending-tokens (.-rate rate-limiter)))))

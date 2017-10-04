@@ -2,7 +2,8 @@
   (:require [clojure.test :refer :all]
             [diehard.core :refer :all])
   (:import [net.jodah.failsafe FailsafeException CircuitBreakerOpenException]
-           [net.jodah.failsafe.util Ratio]))
+           [net.jodah.failsafe.util Ratio]
+           [java.util.concurrent CountDownLatch]))
 
 (deftest test-retry
   (testing "retry-on"
@@ -260,3 +261,40 @@
                                             :permits 2}
                           (my-fn counter0))))]
         (is (> t0 1000))))))
+
+(deftest test-bulkhead
+  (testing "only two thread is allow to run bulkhead block"
+    (defbulkhead bh0 {:concurrency 2})
+    (let [counter (atom 0)
+          fun (fn [_]
+                (with-bulkhead bh0
+                  (let [v (swap! counter inc)]
+                    (Thread/sleep 100)
+                    (swap! counter dec)
+                    v)))]
+      (is (every? #(<= % 2) (pmap #(fun %) (range 20))))))
+
+  (testing "timeout"
+    (defbulkhead bh1 {:concurrency 2})
+    (let [max-wait 100
+          latch (CountDownLatch. 2)
+          fun (fn [id]
+                (with-bulkhead {:bulkhead bh1
+                                :max-wait-ms 100}
+                  #_(println (str "Running subtask" id))
+                  (Thread/sleep 2000)))]
+      (future
+        (.countDown latch)
+        (fun 1))
+      (future
+        (.countDown latch)
+        (fun 2))
+
+      (Thread/sleep 100)
+      (try
+        (.await latch)
+        (fun 3)
+        (is false)
+        (catch Exception e
+          (is (:bulkhead (ex-data e)))
+          (is (= max-wait (:max-wait-ms (ex-data e)))))))))

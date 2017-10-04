@@ -54,6 +54,20 @@ configuration.
   (send-people-to-the-moon))
 ```
 
+### Bulkhead
+
+Bulkhead allows you to limit concurrent execution on a code block.
+
+```clojure
+(require '[diehard.core :as dh])
+
+;; at most 10 threads can run the code block concurrently
+(defbulkhead my-bh {:concurrency 10})
+
+(dh/with-bulkhead my-bh
+  (send-people-to-the-moon))
+```
+
 ## Docs
 
 More options can be found in the documentation

@@ -1,5 +1,4 @@
-(ns diehard.rate-limiter
-  (:require [diehard.util :as u]))
+(ns diehard.rate-limiter)
 
 (defprotocol IRateLimiter
   (acquire!
@@ -94,7 +93,6 @@
   * `rate`: permits per second
   * `max-cached-tokens`: the max size of tokens that the bucket can cache when it's idle"
   [opts]
-  (u/verify-opt-map-keys opts allowed-rate-limiter-option-keys)
   (if-let [rate (:rate opts)]
     (let [max-cached-tokens (:max-cached-tokens opts rate)]
         (TokenBucketRateLimiter. (/ (double rate) 1000) max-cached-tokens

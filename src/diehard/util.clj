@@ -1,4 +1,6 @@
 (ns ^:no-doc diehard.util
+  (:require [diehard.spec :as ds]
+            [clojure.spec.alpha :as s])
   (:import [net.jodah.failsafe.function Predicate BiPredicate
             CheckedRunnable CheckedBiFunction]
            [java.util List]))
@@ -7,6 +9,12 @@
   (doseq [k (keys opt-map)]
     (when-not (allowed-keys k)
       (throw (IllegalArgumentException. (str "Policy option map contains unknown key " k))))))
+
+(defn verify-opt-map-keys-with-spec [spec opt-map]
+  (let [parsed (s/conform spec opt-map)]
+    (if (= parsed ::s/invalid)
+      (throw (ex-info "Invalid input" (s/explain-data spec opt-map)))
+      parsed)))
 
 (defn predicate-or-value [v]
   (if (fn? v)

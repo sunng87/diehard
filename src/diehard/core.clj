@@ -167,7 +167,7 @@ And use `:policy` option in option map.
 "}
   defretrypolicy [name opts]
   `(let [the-opts# ~opts]
-     (u/verify-opt-map-keys the-opts# ~policy-allowed-keys)
+     (u/verify-opt-map-keys-with-spec :retry/retry-policy-new the-opts#)
      (def ~name (retry-policy-from-config the-opts#))))
 
 (defmacro ^{:doc "Predefined listener.
@@ -202,7 +202,7 @@ And use `:policy` option in option map.
 "}
   deflistener [name opts]
   `(let [the-opts# ~opts]
-     (u/verify-opt-map-keys the-opts# ~listener-allowed-keys)
+     (u/verify-opt-map-keys-with-spec :retry/retry-listener-new the-opts#)
      (def ~name (listeners-from-config the-opts#))))
 
 (defmacro ^{:doc "Retry policy protected block.
@@ -314,7 +314,7 @@ It will work together with retry policy as quit criteria.
 "}
   with-retry [opt & body]
   `(let [the-opt# ~opt]
-     (u/verify-opt-map-keys the-opt# ~allowed-keys)
+     (u/verify-opt-map-keys-with-spec :retry/retry-block the-opt#)
      (let [retry-policy# (retry-policy-from-config the-opt#)
            listeners# (listeners-from-config the-opt#)
            fallback# (fallback the-opt#)
@@ -426,7 +426,7 @@ You can always check circuit breaker state with
 * `:rate` execution permits per second.
 * `:max-cached-tokens` the max size of permits we can cache when idle"}
   defratelimiter [name opts]
-  `(def ~name (rl/rate-limiter ~opts)))
+  `(def ~name (rl/rate-limiter (u/verify-opt-map-keys-with-spec :rate-limiter/rate-limiter-new ~opts))))
 
 (defmacro
   ^{:doc "Rate Limiter protected block. Code execution in this block is throttled
@@ -469,6 +469,7 @@ by setting `:permits` option.
   `(let [opts# (if (satisfies? rl/IRateLimiter ~opts)
                  {:ratelimiter ~opts}
                  ~opts)
+         opts# (u/verify-opt-map-keys-with-spec :rate-limiter/rate-limiter-block opts#)
          rate-limiter# (:ratelimiter opts#)
          max-wait# (:max-wait-ms opts#)
          permits# (:permits opts# 1)]
@@ -484,7 +485,8 @@ by setting `:permits` option.
   ^{:doc "Create bulkhead config from option map.
 * `concurrency` the max number of concurrent executions"}
   defbulkhead [name opts]
-  `(def ~name (bh/bulkhead ~opts)))
+  `(def ~name
+     (bh/bulkhead (u/verify-opt-map-keys-with-spec :bulkhead/bulkhead-new ~opts))))
 
 (defmacro
   ^{:doc "Bulkhead block. Only given number of executions is allowed to be executed in parallel.
@@ -517,6 +519,7 @@ when `max-wait-ms` exceeded, an `ex-info` will be thrown with `ex-data` as `{:bu
   `(let [opts# (if (satisfies? bh/IBulkhead ~opts)
                  {:bulkhead ~opts}
                  ~opts)
+         opts# (u/verify-opt-map-keys-with-spec :bulkhead/bulkhead-block opts#)
          {bulkhead# :bulkhead
           timeout-ms# :max-wait-ms} opts#]
      (if (nil? timeout-ms#)

@@ -81,8 +81,8 @@
       (with-retry {:unknown-option 1}
         *executions*)
       (is false)
-      (catch IllegalArgumentException _
-        (is true))))
+      (catch Exception e
+        (is (not-empty (:clojure.spec.alpha/problems (ex-data e)) )))))
 
   (testing "listeners"
     (let [retry-counter (atom 0)

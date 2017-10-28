@@ -161,17 +161,17 @@
 
 (deftest test-circuit-breaker-params
   (testing "failure threshold ratio"
-    (defcircuitbreaker test-cb {:failure-threshold-ratio [7 10]})
-    (is (= (.ratio (Ratio. 7 10)) (.ratio (.getFailureThreshold test-cb)))))
+    (defcircuitbreaker test-cb-p1 {:failure-threshold-ratio [7 10]})
+    (is (= (.ratio (Ratio. 7 10)) (.ratio (.getFailureThreshold test-cb-p1)))))
   (testing "failure threshold"
-    (defcircuitbreaker test-cb {:failure-threshold 7})
-    (is (= 7 (.numerator (.getFailureThreshold test-cb)))))
+    (defcircuitbreaker test-cb-p2 {:failure-threshold 7})
+    (is (= 7 (.numerator (.getFailureThreshold test-cb-p2)))))
   (testing "success threshold ratio"
-    (defcircuitbreaker test-cb {:success-threshold-ratio [10 10]})
-    (is (= (.ratio (Ratio. 10 10)) (.ratio (.getSuccessThreshold test-cb)))))
+    (defcircuitbreaker test-cb-p3 {:success-threshold-ratio [10 10]})
+    (is (= (.ratio (Ratio. 10 10)) (.ratio (.getSuccessThreshold test-cb-p3)))))
   (testing "success threshold"
-    (defcircuitbreaker test-cb {:success-threshold 10})
-    (is (= 10 (.numerator (.getSuccessThreshold test-cb))))))
+    (defcircuitbreaker test-cb-p4 {:success-threshold 10})
+    (is (= 10 (.numerator (.getSuccessThreshold test-cb-p4))))))
 
 (deftest test-retry-policy-params
   (testing "retry policy param"
@@ -206,10 +206,10 @@
 
 (deftest test-circuit-breaker-with-retry-block
   (testing "circuit open within retry block"
-    (defcircuitbreaker test-cb {:failure-threshold 2
+    (defcircuitbreaker test-cb-2 {:failure-threshold 2
                                 :delay-ms 100000})
     (try
-      (with-retry {:circuit-breaker test-cb
+      (with-retry {:circuit-breaker test-cb-2
                    :max-retries 100}
         (throw (IllegalStateException.)))
       (is false)

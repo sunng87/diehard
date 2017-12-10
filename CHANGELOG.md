@@ -1,5 +1,23 @@
 # Change Log
 
+## [0.7.0] - 2017-12-10
+
+### Added
+
+- Bulkhead
+
+### Changed
+
+- Uses spec for input validation, requires Clojure 1.9+
+
+### Changed
+
+## [0.6.0] - 2017-07-09
+
+### Added
+
+- Added rate limiter
+
 ## [0.5.0] - 2016-11-25
 
 ### Changed

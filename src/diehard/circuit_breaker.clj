@@ -14,7 +14,7 @@
     :on-open :on-close :on-half-open})
 
 (defn circuit-breaker [opts]
-  (u/verify-opt-map-keys opts allowed-circuit-breaker-option-keys)
+  (u/verify-opt-map-keys-with-spec :circuit-breaker/circuit-breaker opts)
   (let [cb (CircuitBreaker.)]
     (when (contains? opts :fail-on)
       (.failOn cb (u/predicate-or-value (:fail-on opts))))

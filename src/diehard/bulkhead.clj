@@ -1,5 +1,4 @@
 (ns diehard.bulkhead
-  (:require [diehard.util :as u])
   (:import [java.util.concurrent Semaphore TimeUnit]))
 
 (def ^{:const true :no-doc true}
@@ -24,7 +23,6 @@
   "Create bulkhead with given configuration:
   * `concurrency`: the max number of concurrent executions"
   [opts]
-  (u/verify-opt-map-keys opts allowed-bulkhead-option-keys)
   (if-let [concurrency (:concurrency opts)]
     (Bulkhead. (Semaphore. concurrency))
     (throw (IllegalArgumentException. ":concurrency is required for bulkhead"))))

@@ -75,6 +75,11 @@
                           :max-duration-ms 50
                           :retry-if (constantly true)}
                (Thread/sleep 10)
+               *executions*)))
+    (is (= 2 (with-retry {:backoff-ms [10 1000 1.1]
+                          :max-duration-ms 50
+                          :retry-if (constantly true)}
+               (Thread/sleep 10)
                *executions*))))
   (testing "invalid option given to policy map"
     (try

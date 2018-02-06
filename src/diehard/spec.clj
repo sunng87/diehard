@@ -35,7 +35,9 @@
 (s/def :retry/abort-when any?)
 
 (s/def :retry/backoff-ms
-  (s/or :single int? :tuple (s/tuple int? int?)))
+  (s/or :single int?
+        :tuple2 (s/tuple int? int?)
+        :tuple3 (s/tuple int? int? double?)))
 (s/def :retry/max-retries int?)
 (s/def :retry/max-duration-ms int?)
 (s/def :retry/delay-ms int?)

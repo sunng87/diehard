@@ -4,6 +4,8 @@
 Status](https://travis-ci.org/sunng87/diehard.svg?branch=master)](https://travis-ci.org/sunng87/diehard)
 [![Clojars](https://img.shields.io/clojars/v/diehard.svg?maxAge=2592000)](https://clojars.org/diehard)
 [![license](https://img.shields.io/github/license/sunng87/diehard.svg?maxAge=2592000)]()
+[![Donate](https://img.shields.io/badge/donate-liberapay-yellow.svg)](https://liberapay.com/Sunng/donate)
+
 
 Clojure library to provide safety guard to your application.
 Some of the functionality is wrapper over
@@ -79,7 +81,13 @@ More options can be found in the documentation
 
 ## License
 
-Copyright © 2016-2017 Ning Sun
+Copyright © 2016-2018 Ning Sun
 
 Distributed under the Eclipse Public License either version 1.0 or (at
 your option) any later version.
+
+## Donation
+
+I'm now accepting donation on [liberapay](https://liberapay.com/Sunng/donate),
+if you find my work helpful and want to keep it going.
+

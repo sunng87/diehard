@@ -28,6 +28,11 @@
     (is (= 1 (with-retry {:retry-if (fn [v _]
                                       (= v 0))}
                *executions*))))
+  (testing "retry-if honors clojure truthiness"
+    (is (= 1 (with-retry {:retry-if (fn [v e] (and e (instance? IllegalStateException e)))}
+               (if (= 0 *executions*)
+                 (throw (IllegalStateException.))
+                 *executions*)))))
   (testing "retry-when"
     (is (= 2 (with-retry {:retry-when 0}
                (if (= 1 *executions*)

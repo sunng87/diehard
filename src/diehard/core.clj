@@ -129,7 +129,7 @@
 * `:retry-when` retry when return value is given value
 * `:retry-on` retry on given exception / exceptions(vector) were thrown
 * `:retry-if` specify a function `(fn [return-value
-  exception-thrown])`, retry if the function returns true
+  exception-thrown])`, retry if the function returns truthy
 
 ##### Retry abortion criteria
 
@@ -137,7 +137,7 @@
 * `:abort-on` abort retry on given exception / exceptions(vector) were
   thrown
 * `:abort-if` specify a function `(fn [return-value
-  exception-thrown])`, abort retry if the function returns true
+  exception-thrown])`, abort retry if the function returns truthy
 * `:max-retries` abort retry when max attempts reached
 * `:max-duration` abort retry when duration reached
 
@@ -220,7 +220,7 @@ the last execution. If `:circuit-breaker` is set, it will throw
 * `:retry-when` retry when return value is given value
 * `:retry-on` retry on given exception / exceptions(vector) were thrown
 * `:retry-if` specify a function `(fn [return-value
-  exception-thrown])`, retry if the function returns true
+  exception-thrown])`, retry if the function returns truthy
 
 ##### Retry abortion criteria
 
@@ -228,7 +228,7 @@ the last execution. If `:circuit-breaker` is set, it will throw
 * `:abort-on` abort retry on given exception / exceptions(vector) were
   thrown
 * `:abort-if` specify a function `(fn [return-value
-  exception-thrown])`, abort retry if the function returns true
+  exception-thrown])`, abort retry if the function returns truthy
 * `:max-retries` abort retry when max attempts reached
 * `:max-duration` abort retry when duration reached
 

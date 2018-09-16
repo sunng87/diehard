@@ -139,7 +139,7 @@
 * `:abort-if` specify a function `(fn [return-value
   exception-thrown])`, abort retry if the function returns true
 * `:max-retries` abort retry when max attempts reached
-* `:max-duration` abort retry when duration reached
+* `:max-duration-ms` abort retry when duration reached
 
 ##### Delay
 
@@ -230,7 +230,7 @@ the last execution. If `:circuit-breaker` is set, it will throw
 * `:abort-if` specify a function `(fn [return-value
   exception-thrown])`, abort retry if the function returns true
 * `:max-retries` abort retry when max attempts reached
-* `:max-duration` abort retry when duration reached
+* `:max-duration-ms` abort retry when duration reached
 
 ##### Delay
 

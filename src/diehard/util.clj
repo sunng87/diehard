@@ -18,13 +18,13 @@
 
 (defn predicate-or-value [v]
   (if (fn? v)
-    (reify Predicate (test [_ c] (v c)))
+    (reify Predicate (test [_ c] (boolean (v c))))
     ^List (if (vector? v) v [v])))
 
 (defn bipredicate [v]
   (reify BiPredicate
     (test [_ return-value thrown-exception]
-      (v return-value thrown-exception))))
+      (boolean (v return-value thrown-exception)))))
 
 (defn fn-as-runnable [f]
   (reify CheckedRunnable

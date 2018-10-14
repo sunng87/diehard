@@ -186,8 +186,8 @@ And use `:policy` option in option map.
 * `:on-success` accepts a function which takes `result` as arguments,
   called when existing `retry` block with success (mismatches retry
   criteria)
-* `:on-retry` accepts a function which takes `result` as arguments,
-  called when a retry attempted.
+* `:on-retry` accepts a function which takes `result`, `exception` as
+  arguments, called when a retry attempted.
 
 ##### Use predefined listeners
 

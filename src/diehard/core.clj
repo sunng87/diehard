@@ -188,6 +188,9 @@ And use `:policy` option in option map.
   criteria)
 * `:on-retry` accepts a function which takes `result`, `exception` as
   arguments, called when a retry attempted.
+* `:on-retries-exceeded` accepts a function which takes `result`,
+  `exception` as arguments, called when max retries or max duration have
+  been exceeded.
 
 ##### Use predefined listeners
 

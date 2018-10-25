@@ -181,10 +181,10 @@ And use `:policy` option in option map.
   `exception` as arguments, called when execution failed (matches
   retry criteria)
 * `:on-failure` accepts a function which takes `result`,
-  `exception` as arguments, called when existing `retry` block with
+  `exception` as arguments, called when exiting `retry` block with
   failure (matches retry criteria)
 * `:on-success` accepts a function which takes `result` as arguments,
-  called when existing `retry` block with success (mismatches retry
+  called when exiting `retry` block with success (mismatches retry
   criteria)
 * `:on-retry` accepts a function which takes `result`, `exception` as
   arguments, called when a retry attempted.
@@ -269,10 +269,10 @@ And use `:policy` option in option map.
   `exception` as arguments, called when execution failed (matches
   retry criteria)
 * `:on-failure` accepts a function which takes `result`,
-  `exception` as arguments, called when existing `retry` block with
+  `exception` as arguments, called when exiting `retry` block with
   failure (matches retry criteria)
 * `:on-success` accepts a function which takes `result` as arguments,
-  called when existing `retry` block with success (mismatches retry
+  called when exiting `retry` block with success (mismatches retry
   criteria)
 * `:on-retry` accepts a function which takes `result` as arguments,
   called when a retry attempted.

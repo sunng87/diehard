@@ -2,7 +2,7 @@
   (:require [clojure.spec.alpha :as s]
             [diehard.rate-limiter :as dr]
             [diehard.bulkhead :as db])
-  (:import [net.jodah.failsafe RetryPolicy CircuitBreaker Listeners]))
+  (:import [net.jodah.failsafe RetryPolicy CircuitBreaker]))
 
 ;; copied from https://groups.google.com/forum/#!topic/clojure/fti0eJdPQJ8
 (defmacro only-keys
@@ -45,7 +45,7 @@
 (s/def :retry/jitter-factor double?)
 (s/def :retry/jitter-ms int?)
 
-(s/def :retry/listener #(instance? Listeners %))
+#_(s/def :retry/listener #(instance? Listeners %))
 (s/def :retry/on-abort fn?)
 (s/def :retry/on-complete fn?)
 (s/def :retry/on-failed-attempt fn?)

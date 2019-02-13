@@ -5,12 +5,14 @@
             [diehard.rate-limiter :as rl]
             [diehard.bulkhead :as bh])
   (:import [java.util List]
-           [java.util.concurrent TimeUnit]
-           [net.jodah.failsafe Failsafe RetryPolicy CircuitBreaker
-            ExecutionContext FailsafeException Listeners SyncFailsafe
+           [java.time Duration]
+           [java.time.temporal ChronoUnit]
+           [net.jodah.failsafe Failsafe Fallback RetryPolicy CircuitBreaker
+            ExecutionContext FailsafeException
             CircuitBreakerOpenException]
-           [net.jodah.failsafe.function CheckedBiFunction ContextualCallable]
-           [net.jodah.failsafe.util Duration]))
+           [net.jodah.failsafe.event ExecutionAttemptedEvent
+            ExecutionCompletedEvent]
+           [net.jodah.failsafe.function ContextualSupplier]))
 
 (def ^:const ^:no-doc
   policy-allowed-keys #{:policy :circuit-breaker
@@ -28,6 +30,22 @@
 (def ^:const ^:no-doc allowed-keys
   (set/union policy-allowed-keys listener-allowed-keys #{:fallback}))
 
+(def ^{:dynamic true
+       :doc "Available in retry block. Contexual value represents time elasped since first attempt"}
+  *elapsed-time-ms*)
+(def ^{:dynamic true
+       :doc "Available in retry block. Contexual value represents execution times"}
+  *executions*)
+(def ^{:dynamic true
+       :doc "Available in retry block. Contexual value represents first attempt time"}
+  *start-time-ms*)
+
+(defmacro ^:no-doc with-context [ctx & body]
+  `(binding [*elapsed-time-ms* (.toMillis ^Duration (.getElapsedTime ~ctx))
+             *executions* (long (.getAttemptCount ~ctx))
+             *start-time-ms* (.toMillis ^Duration (.getStartTime ~ctx))]
+     ~@body))
+
 (defn ^:no-doc retry-policy-from-config [policy-map]
   (if-let [policy (:policy policy-map)]
 
@@ -41,85 +59,82 @@
       (when (contains? policy-map :abort-when)
         (.abortWhen policy (:abort-when policy-map)))
       (when (contains? policy-map :retry-if)
-        (.retryIf policy (u/bipredicate (:retry-if policy-map))))
+        (.handleIf policy (u/bipredicate (:retry-if policy-map))))
       (when (contains? policy-map :retry-on)
-        (.retryOn policy (u/predicate-or-value (:retry-on policy-map))))
+        (.handleOn policy (u/predicate-or-value (:retry-on policy-map))))
       (when (contains? policy-map :retry-when)
-        (.retryWhen policy (:retry-when policy-map)))
+        (if (fn? (:retry-when policy-map))
+          (.handleResultIf policy (u/predicate (:retry-when policy-map)))
+          (.handleResult policy (:retry-when policy-map))))
       (when (contains? policy-map :backoff-ms)
         (let [backoff-config (:backoff-ms policy-map)
               [delay max-delay multiplier] backoff-config]
           (if (nil? multiplier)
-            (.withBackoff policy delay max-delay TimeUnit/MILLISECONDS)
-            (.withBackoff policy delay max-delay TimeUnit/MILLISECONDS multiplier))))
+            (.withBackoff policy delay max-delay ChronoUnit/MILLIS)
+            (.withBackoff policy delay max-delay ChronoUnit/MILLIS multiplier))))
       (when-let [delay  (:delay-ms policy-map)]
-        (.withDelay policy delay TimeUnit/MILLISECONDS))
+        (.withDelay policy delay ChronoUnit/MILLIS))
       (when-let [duration (:max-duration-ms policy-map)]
-        (.withMaxDuration policy duration TimeUnit/MILLISECONDS))
+        (.withMaxDuration policy (Duration/ofMillis duration)))
       (when-let [retries (:max-retries policy-map)]
         (.withMaxRetries policy retries))
       (when-let [jitter (:jitter-factor policy-map)]
         (.withJitter policy jitter))
       (when-let [jitter (:jitter-ms policy-map)]
-        (.withJitter policy jitter TimeUnit/MILLISECONDS))
+        (.withJitter policy (Duration/ofMillis jitter)))
+
+      ;; events
+      (when-let [on-abort (:on-abort policy-map)]
+        (.onAbort policy
+                  (u/fn-as-consumer
+                   (fn [^ExecutionCompletedEvent event]
+                     (with-context event
+                       (on-abort (.getResult event) (.getFailure event)))))))
+      (when-let [on-failed-attempt (:on-failed-attempt policy-map)]
+        (.onFailedAttempt policy
+                          (u/fn-as-consumer
+                           (fn [^ExecutionAttemptedEvent event]
+                             (with-context event
+                               (on-failed-attempt (.getResult event) (.getFailure event)))))))
+      (when-let [on-failure (:on-failure policy-map)]
+        (.onFailure policy
+                    (u/fn-as-consumer
+                     (fn [^ExecutionCompletedEvent event]
+                       (with-context event
+                         (on-failure (.getResult event) (.getFailure event)))))))
+
+      (when-let [on-retry (:on-retry policy-map)]
+        (.onRetry policy
+                  (u/fn-as-consumer
+                   (fn [^ExecutionAttemptedEvent event]
+                     (with-context event
+                       (on-retry (.getResult event) (.getFailure event)))))))
+
+      (when-let [on-retries-exceeded (:on-retries-exceeded policy-map)]
+        (.onRetriesExceeded policy
+                            (u/fn-as-consumer
+                             (fn [^ExecutionCompletedEvent event]
+                               (with-context event
+                                 (on-retries-exceeded (.getResult event) (.getFailure event)))))))
+
+      (when-let [on-success (:on-success policy-map)]
+        (.onSuccess policy
+                    (u/fn-as-consumer
+                     (fn [^ExecutionCompletedEvent event]
+                       (with-context event
+                         (on-success (.getResult event)))))))
+
       policy)))
 
-(def ^{:dynamic true
-       :doc "Available in retry block. Contexual value represents time elasped since first attempt"}
-  *elapsed-time-ms*)
-(def ^{:dynamic true
-       :doc "Available in retry block. Contexual value represents execution times"}
-  *executions*)
-(def ^{:dynamic true
-       :doc "Available in retry block. Contexual value represents first attempt time"}
-  *start-time-ms*)
-
-(defmacro ^:no-doc with-context [ctx & body]
-  `(binding [*elapsed-time-ms* (.toMillis ^Duration (.getElapsedTime ~ctx))
-             *executions* (long (.getExecutions ~ctx))
-             *start-time-ms* (.toMillis ^Duration (.getStartTime ~ctx))]
-     ~@body))
-
-(defn ^:no-doc listeners-from-config [policy-map]
-  (if-let [listener (:listener policy-map)]
-
-    listener
-
-    (proxy [Listeners] []
-      (onAbort [result exception context]
-        (when-let [handler (:on-abort policy-map)]
-          (with-context ^ExecutionContext context
-            (handler result exception))))
-      (onComplete [result exception context]
-        (when-let [handler (:on-complete policy-map)]
-          (with-context ^ExecutionContext context
-            (handler result exception))))
-      (onFailedAttempt [result exception context]
-        (when-let [handler (:on-failed-attempt policy-map)]
-          (with-context ^ExecutionContext context
-            (handler result exception))))
-      (onFailure [result exception context]
-        (when-let [handler (:on-failure policy-map)]
-          (with-context ^ExecutionContext context
-            (handler result exception))))
-      (onRetry [result exception context]
-        (when-let [handler (:on-retry policy-map)]
-          (with-context  ^ExecutionContext context
-            (handler result exception))))
-      (onSuccess [result context]
-        (when-let [handler (:on-success policy-map)]
-          (with-context ^ExecutionContext context
-            (handler result))))
-      (onRetriesExceeded [result exception]
-        (when-let [handler (:on-retries-exceeded policy-map)]
-          (handler result exception))))))
 
 (defn ^:no-doc fallback [opts]
   (when-let [fb (:fallback opts)]
-    (u/fn-as-bi-function
-     (if-not (fn? fb)
-       (constantly fb)
-       fb))))
+    (Fallback/of
+     (fn [^ExecutionAttemptedEvent exec-event]
+       (if-not (fn? fb)
+         fb
+         (with-context exec-event
+           (fb (.getLastFailure exec-event) (.getLastResult exec-event))))))))
 
 (defmacro ^{:doc "Predefined retry policy.
 #### Available options

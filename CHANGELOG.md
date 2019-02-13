@@ -1,5 +1,20 @@
 # Change Log
 
+## [0.7.2] - 2018-09-17
+
+### Changed
+
+- Allow truthy value for policy check function
+- Updated Failsafe to 1.1.0
+- Updated clojure spec
+
+## [0.7.1] - 2018-02-06
+
+### Changed
+
+- Fixed spec for backoff multiplier
+- Updated Failsafe to 1.0.5
+
 ## [0.7.0] - 2017-12-10
 
 ### Added

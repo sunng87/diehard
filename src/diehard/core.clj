@@ -7,7 +7,8 @@
   (:import [java.util List]
            [java.time Duration]
            [java.time.temporal ChronoUnit]
-           [net.jodah.failsafe Failsafe Fallback RetryPolicy CircuitBreaker
+           [net.jodah.failsafe Failsafe Policy Fallback RetryPolicy
+            CircuitBreaker
             ExecutionContext FailsafeException
             CircuitBreakerOpenException]
            [net.jodah.failsafe.event ExecutionAttemptedEvent
@@ -165,6 +166,24 @@
 * `:jitter-factor` random factor for each delay
 * `:jitter-ms` random time `(-jitter-ms, jitter-ms)` adds to each delay
 
+##### Retry Listeners
+
+* `:on-abort` accepts a function which takes `result`, `exception` as
+  arguments, called when retry aborted
+* `:on-complete` accepts a function which takes `result`, `exception` as
+  arguments, called when exiting `retry` block
+* `:on-failed-attempt` accepts a function which takes `result`,
+  `exception` as arguments, called when execution failed (matches
+  retry criteria)
+* `:on-failure` accepts a function which takes `result`,
+  `exception` as arguments, called when existing `retry` block with
+  failure (matches retry criteria)
+* `:on-success` accepts a function which takes `result` as arguments,
+  called when existing `retry` block with success (mismatches retry
+  criteria)
+* `:on-retry` accepts a function which takes `result` as arguments,
+  called when a retry attempted.
+
 ##### Use pre-defined policy
 
 You can put together all those retry policies in a `defretrypolicy`.
@@ -184,41 +203,6 @@ And use `:policy` option in option map.
   `(let [the-opts# ~opts]
      (u/verify-opt-map-keys-with-spec :retry/retry-policy-new the-opts#)
      (def ~name (retry-policy-from-config the-opts#))))
-
-(defmacro ^{:doc "Predefined listener.
-##### Retry Listeners
-
-* `:on-abort` accepts a function which takes `result`, `exception` as
-  arguments, called when retry aborted
-* `:on-complete` accepts a function which takes `result`, `exception` as
-  arguments, called when exiting `retry` block
-* `:on-failed-attempt` accepts a function which takes `result`,
-  `exception` as arguments, called when execution failed (matches
-  retry criteria)
-* `:on-failure` accepts a function which takes `result`,
-  `exception` as arguments, called when existing `retry` block with
-  failure (matches retry criteria)
-* `:on-success` accepts a function which takes `result` as arguments,
-  called when existing `retry` block with success (mismatches retry
-  criteria)
-* `:on-retry` accepts a function which takes `result` as arguments,
-  called when a retry attempted.
-
-##### Use predefined listeners
-
-```clojure
-(diehard/deflistener listener
-  {:on-retry (fn [return-value exception-thrown] (println \"retried\"))})
-
-(diehard/with-retry {:policy policy :listener listener}
-  ;; your code here
-  )
-```
-"}
-  deflistener [name opts]
-  `(let [the-opts# ~opts]
-     (u/verify-opt-map-keys-with-spec :retry/retry-listener-new the-opts#)
-     (def ~name (listeners-from-config the-opts#))))
 
 (defmacro ^{:doc "Retry policy protected block.
 If the return value of or exception thrown from the code block matches
@@ -255,6 +239,24 @@ the last execution. If `:circuit-breaker` is set, it will throw
 * `:delay-ms` use constant delay between each retry
 * `:jitter-factor` random factor for each delay
 * `:jitter-ms` random time `(-jitter-ms, jitter-ms)` adds to each delay
+
+##### Retry Listeners
+
+* `:on-abort` accepts a function which takes `result`, `exception` as
+  arguments, called when retry aborted
+* `:on-failed-attempt` accepts a function which takes `result`,
+  `exception` as arguments, called when execution failed (matches
+  retry criteria)
+* `:on-failure` accepts a function which takes `result`,
+  `exception` as arguments, called when existing `retry` block with
+  failure (matches retry criteria)
+* `:on-success` accepts a function which takes `result` as arguments,
+  called when existing `retry` block with success (mismatches retry
+  criteria)
+* `:on-retry` accepts a function which takes `result` and `exception` as
+  arguments, called when a retry attempted.
+* `:on-retries-exceeded` accepts a function which takes `result` and
+  `exception` as arguments, called when retries exceeded
 
 ##### Use pre-defined policy
 
@@ -331,20 +333,14 @@ It will work together with retry policy as quit criteria.
   `(let [the-opt# ~opt]
      (u/verify-opt-map-keys-with-spec :retry/retry-block the-opt#)
      (let [retry-policy# (retry-policy-from-config the-opt#)
-           listeners# (listeners-from-config the-opt#)
            fallback# (fallback the-opt#)
+           cb# (:circuit-breaker the-opt#)
 
-           failsafe# (.. (Failsafe/with ^RetryPolicy retry-policy#)
-                         (with ^Listeners listeners#))
-           failsafe# (if-let [cb# (:circuit-breaker the-opt#)]
-                       (.with ^SyncFailsafe failsafe# ^CircuitBreaker cb#)
-                       failsafe#)
-           failsafe# (if fallback#
-                       (.withFallback ^SyncFailsafe failsafe#
-                                      ^CheckedBiFunction fallback#)
-                       failsafe#)
-           callable# (reify ContextualCallable
-                       (call [_ ^ExecutionContext ctx#]
+           policies# (into-array ^Policy (filter some? [retry-policy# fallback# cb#]))
+
+           failsafe# (Failsafe/with policies#)
+           callable# (reify ContextualSupplier
+                       (get [_ ^ExecutionContext ctx#]
                          (with-context ctx#
                            ~@body)))]
        (try
@@ -426,10 +422,17 @@ You can always check circuit breaker state with
   `(let [opts# (if-not (map? ~cb)
                  {:circuitbreaker ~cb}
                  ~cb)
+         fallback# (fallback the-opt#)
          cb# (:circuitbreaker opts#)
-         failsafe# (Failsafe/with ^CircuitBreaker cb#)]
+
+         policies# (into-array ^Policy (filter some? [cb# fallback#]))
+         failsafe# (Failsafe/with policies#)
+
+         supplier# (reify CheckedSupplier
+                    (get [_]
+                      ~@body))]
      (try
-       (.get ^SyncFailsafe failsafe# ^Callable (fn [] ~@body))
+       (.get ^SyncFailsafe failsafe supplier#)
        (catch CircuitBreakerOpenException e#
          (throw e#))
        (catch FailsafeException e#

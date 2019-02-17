@@ -1,7 +1,8 @@
 (ns ^:no-doc diehard.util
   (:require [diehard.spec :as ds]
             [clojure.spec.alpha :as s])
-  (:import [net.jodah.failsafe.function CheckedRunnable CheckedConsumer]
+  (:import [net.jodah.failsafe.function CheckedRunnable CheckedConsumer
+            CheckedFunction]
            [java.util List]
            [java.util.function Predicate BiPredicate]))
 
@@ -38,3 +39,7 @@
 (defn fn-as-consumer [f]
   (reify CheckedConsumer
     (accept [_ t] (f t))))
+
+(defn fn-as-checked-function [f]
+  (reify CheckedFunction
+    (apply [_ t] (f t))))

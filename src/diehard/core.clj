@@ -7,13 +7,14 @@
   (:import [java.util List]
            [java.time Duration]
            [java.time.temporal ChronoUnit]
-           [net.jodah.failsafe Failsafe Policy Fallback RetryPolicy
-            CircuitBreaker
+           [net.jodah.failsafe Failsafe FailurePolicy Fallback RetryPolicy
+            CircuitBreaker FailsafeExecutor
             ExecutionContext FailsafeException
             CircuitBreakerOpenException]
            [net.jodah.failsafe.event ExecutionAttemptedEvent
             ExecutionCompletedEvent]
-           [net.jodah.failsafe.function ContextualSupplier]))
+           [net.jodah.failsafe.function CheckedSupplier ContextualSupplier
+            CheckedFunction]))
 
 (def ^:const ^:no-doc
   policy-allowed-keys #{:policy :circuit-breaker
@@ -62,7 +63,7 @@
       (when (contains? policy-map :retry-if)
         (.handleIf policy (u/bipredicate (:retry-if policy-map))))
       (when (contains? policy-map :retry-on)
-        (.handleOn policy (u/predicate-or-value (:retry-on policy-map))))
+        (.handle policy (u/predicate-or-value (:retry-on policy-map))))
       (when (contains? policy-map :retry-when)
         (if (fn? (:retry-when policy-map))
           (.handleResultIf policy (u/predicate (:retry-when policy-map)))
@@ -74,10 +75,10 @@
             (.withBackoff policy delay max-delay ChronoUnit/MILLIS)
             (.withBackoff policy delay max-delay ChronoUnit/MILLIS multiplier))))
       (when-let [delay  (:delay-ms policy-map)]
-        (.withDelay policy delay ChronoUnit/MILLIS))
+        (.withDelay policy (Duration/ofMillis delay)))
       (when-let [duration (:max-duration-ms policy-map)]
         (.withMaxDuration policy (Duration/ofMillis duration)))
-      (when-let [retries (:max-retries policy-map)]
+      (when-let [retries (:max-retries policy-map -1)]
         (.withMaxRetries policy retries))
       (when-let [jitter (:jitter-factor policy-map)]
         (.withJitter policy jitter))
@@ -96,7 +97,8 @@
                           (u/fn-as-consumer
                            (fn [^ExecutionAttemptedEvent event]
                              (with-context event
-                               (on-failed-attempt (.getResult event) (.getFailure event)))))))
+                               (on-failed-attempt (.getLastResult event)
+                                                  (.getLastFailure event)))))))
       (when-let [on-failure (:on-failure policy-map)]
         (.onFailure policy
                     (u/fn-as-consumer
@@ -109,7 +111,8 @@
                   (u/fn-as-consumer
                    (fn [^ExecutionAttemptedEvent event]
                      (with-context event
-                       (on-retry (.getResult event) (.getFailure event)))))))
+                       (on-retry (.getLastResult event)
+                                 (.getLastFailure event)))))))
 
       (when-let [on-retries-exceeded (:on-retries-exceeded policy-map)]
         (.onRetriesExceeded policy
@@ -130,12 +133,12 @@
 
 (defn ^:no-doc fallback [opts]
   (when-let [fb (:fallback opts)]
-    (Fallback/of
-     (fn [^ExecutionAttemptedEvent exec-event]
-       (if-not (fn? fb)
-         fb
+    (Fallback/of ^CheckedFunction
+     (u/fn-as-checked-function
+      (fn [^ExecutionAttemptedEvent exec-event]
+       (let [fb (if-not (fn? fb) (constantly fb) fb)]
          (with-context exec-event
-           (fb (.getLastFailure exec-event) (.getLastResult exec-event))))))))
+           (fb (.getLastFailure exec-event) (.getLastResult exec-event)))))))))
 
 (defmacro ^{:doc "Predefined retry policy.
 #### Available options
@@ -336,15 +339,23 @@ It will work together with retry policy as quit criteria.
            fallback# (fallback the-opt#)
            cb# (:circuit-breaker the-opt#)
 
-           policies# (into-array ^Policy (filter some? [retry-policy# fallback# cb#]))
+           policies# (into-array FailurePolicy (filter some? [retry-policy# fallback# cb#]))
 
            failsafe# (Failsafe/with policies#)
+           failsafe# (if-let [on-complete# (:on-complete the-opt#)]
+                       (.onComplete failsafe#
+                                    (u/fn-as-consumer
+                                     (fn [^ExecutionCompletedEvent event#]
+                                       (with-context event#
+                                         (on-complete# (.getResult event#)
+                                                       (.getFailure event#))))))
+                       failsafe#)
            callable# (reify ContextualSupplier
                        (get [_ ^ExecutionContext ctx#]
                          (with-context ctx#
                            ~@body)))]
        (try
-         (.get ^SyncFailsafe failsafe# ^ContextualCallable callable#)
+         (.get ^FailsafeExecutor failsafe# ^ContextualSupplier callable#)
          (catch CircuitBreakerOpenException e#
            (throw e#))
          (catch FailsafeException e#
@@ -422,17 +433,25 @@ You can always check circuit breaker state with
   `(let [opts# (if-not (map? ~cb)
                  {:circuitbreaker ~cb}
                  ~cb)
-         fallback# (fallback the-opt#)
+         fallback# (fallback opts#)
          cb# (:circuitbreaker opts#)
 
-         policies# (into-array ^Policy (filter some? [cb# fallback#]))
+         policies# (into-array FailurePolicy (filter some? [cb# fallback#]))
          failsafe# (Failsafe/with policies#)
+         failsafe# (if-let [on-complete# (:on-complete opts#)]
+                     (.onComplete failsafe#
+                                  (u/fn-as-consumer
+                                   (fn [^ExecutionCompletedEvent event#]
+                                     (with-context event#
+                                       (on-complete# (.getResult event#)
+                                                     (.getFailure event#))))))
+                     failsafe#)
 
          supplier# (reify CheckedSupplier
                     (get [_]
                       ~@body))]
      (try
-       (.get ^SyncFailsafe failsafe supplier#)
+       (.get ^FailsafeExecutor failsafe# ^CheckedSupplier supplier#)
        (catch CircuitBreakerOpenException e#
          (throw e#))
        (catch FailsafeException e#

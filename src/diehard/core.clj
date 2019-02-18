@@ -5,12 +5,16 @@
             [diehard.rate-limiter :as rl]
             [diehard.bulkhead :as bh])
   (:import [java.util List]
-           [java.util.concurrent TimeUnit]
-           [net.jodah.failsafe Failsafe RetryPolicy CircuitBreaker
-            ExecutionContext FailsafeException Listeners SyncFailsafe
+           [java.time Duration]
+           [java.time.temporal ChronoUnit]
+           [net.jodah.failsafe Failsafe FailurePolicy Fallback RetryPolicy
+            CircuitBreaker FailsafeExecutor
+            ExecutionContext FailsafeException
             CircuitBreakerOpenException]
-           [net.jodah.failsafe.function CheckedBiFunction ContextualCallable]
-           [net.jodah.failsafe.util Duration]))
+           [net.jodah.failsafe.event ExecutionAttemptedEvent
+            ExecutionCompletedEvent]
+           [net.jodah.failsafe.function CheckedSupplier ContextualSupplier
+            CheckedFunction]))
 
 (def ^:const ^:no-doc
   policy-allowed-keys #{:policy :circuit-breaker
@@ -28,6 +32,22 @@
 (def ^:const ^:no-doc allowed-keys
   (set/union policy-allowed-keys listener-allowed-keys #{:fallback}))
 
+(def ^{:dynamic true
+       :doc "Available in retry block. Contexual value represents time elasped since first attempt"}
+  *elapsed-time-ms*)
+(def ^{:dynamic true
+       :doc "Available in retry block. Contexual value represents execution times"}
+  *executions*)
+(def ^{:dynamic true
+       :doc "Available in retry block. Contexual value represents first attempt time"}
+  *start-time-ms*)
+
+(defmacro ^:no-doc with-context [ctx & body]
+  `(binding [*elapsed-time-ms* (.toMillis ^Duration (.getElapsedTime ~ctx))
+             *executions* (long (.getAttemptCount ~ctx))
+             *start-time-ms* (.toMillis ^Duration (.getStartTime ~ctx))]
+     ~@body))
+
 (defn ^:no-doc retry-policy-from-config [policy-map]
   (if-let [policy (:policy policy-map)]
 
@@ -41,85 +61,84 @@
       (when (contains? policy-map :abort-when)
         (.abortWhen policy (:abort-when policy-map)))
       (when (contains? policy-map :retry-if)
-        (.retryIf policy (u/bipredicate (:retry-if policy-map))))
+        (.handleIf policy (u/bipredicate (:retry-if policy-map))))
       (when (contains? policy-map :retry-on)
-        (.retryOn policy (u/predicate-or-value (:retry-on policy-map))))
+        (.handle policy (u/predicate-or-value (:retry-on policy-map))))
       (when (contains? policy-map :retry-when)
-        (.retryWhen policy (:retry-when policy-map)))
+        (if (fn? (:retry-when policy-map))
+          (.handleResultIf policy (u/predicate (:retry-when policy-map)))
+          (.handleResult policy (:retry-when policy-map))))
       (when (contains? policy-map :backoff-ms)
         (let [backoff-config (:backoff-ms policy-map)
               [delay max-delay multiplier] backoff-config]
           (if (nil? multiplier)
-            (.withBackoff policy delay max-delay TimeUnit/MILLISECONDS)
-            (.withBackoff policy delay max-delay TimeUnit/MILLISECONDS multiplier))))
+            (.withBackoff policy delay max-delay ChronoUnit/MILLIS)
+            (.withBackoff policy delay max-delay ChronoUnit/MILLIS multiplier))))
       (when-let [delay  (:delay-ms policy-map)]
-        (.withDelay policy delay TimeUnit/MILLISECONDS))
+        (.withDelay policy (Duration/ofMillis delay)))
       (when-let [duration (:max-duration-ms policy-map)]
-        (.withMaxDuration policy duration TimeUnit/MILLISECONDS))
-      (when-let [retries (:max-retries policy-map)]
+        (.withMaxDuration policy (Duration/ofMillis duration)))
+      (when-let [retries (:max-retries policy-map -1)]
         (.withMaxRetries policy retries))
       (when-let [jitter (:jitter-factor policy-map)]
         (.withJitter policy jitter))
       (when-let [jitter (:jitter-ms policy-map)]
-        (.withJitter policy jitter TimeUnit/MILLISECONDS))
+        (.withJitter policy (Duration/ofMillis jitter)))
+
+      ;; events
+      (when-let [on-abort (:on-abort policy-map)]
+        (.onAbort policy
+                  (u/fn-as-consumer
+                   (fn [^ExecutionCompletedEvent event]
+                     (with-context event
+                       (on-abort (.getResult event) (.getFailure event)))))))
+      (when-let [on-failed-attempt (:on-failed-attempt policy-map)]
+        (.onFailedAttempt policy
+                          (u/fn-as-consumer
+                           (fn [^ExecutionAttemptedEvent event]
+                             (with-context event
+                               (on-failed-attempt (.getLastResult event)
+                                                  (.getLastFailure event)))))))
+      (when-let [on-failure (:on-failure policy-map)]
+        (.onFailure policy
+                    (u/fn-as-consumer
+                     (fn [^ExecutionCompletedEvent event]
+                       (with-context event
+                         (on-failure (.getResult event) (.getFailure event)))))))
+
+      (when-let [on-retry (:on-retry policy-map)]
+        (.onRetry policy
+                  (u/fn-as-consumer
+                   (fn [^ExecutionAttemptedEvent event]
+                     (with-context event
+                       (on-retry (.getLastResult event)
+                                 (.getLastFailure event)))))))
+
+      (when-let [on-retries-exceeded (:on-retries-exceeded policy-map)]
+        (.onRetriesExceeded policy
+                            (u/fn-as-consumer
+                             (fn [^ExecutionCompletedEvent event]
+                               (with-context event
+                                 (on-retries-exceeded (.getResult event) (.getFailure event)))))))
+
+      (when-let [on-success (:on-success policy-map)]
+        (.onSuccess policy
+                    (u/fn-as-consumer
+                     (fn [^ExecutionCompletedEvent event]
+                       (with-context event
+                         (on-success (.getResult event)))))))
+
       policy)))
 
-(def ^{:dynamic true
-       :doc "Available in retry block. Contexual value represents time elasped since first attempt"}
-  *elapsed-time-ms*)
-(def ^{:dynamic true
-       :doc "Available in retry block. Contexual value represents execution times"}
-  *executions*)
-(def ^{:dynamic true
-       :doc "Available in retry block. Contexual value represents first attempt time"}
-  *start-time-ms*)
-
-(defmacro ^:no-doc with-context [ctx & body]
-  `(binding [*elapsed-time-ms* (.toMillis ^Duration (.getElapsedTime ~ctx))
-             *executions* (long (.getExecutions ~ctx))
-             *start-time-ms* (.toMillis ^Duration (.getStartTime ~ctx))]
-     ~@body))
-
-(defn ^:no-doc listeners-from-config [policy-map]
-  (if-let [listener (:listener policy-map)]
-
-    listener
-
-    (proxy [Listeners] []
-      (onAbort [result exception context]
-        (when-let [handler (:on-abort policy-map)]
-          (with-context ^ExecutionContext context
-            (handler result exception))))
-      (onComplete [result exception context]
-        (when-let [handler (:on-complete policy-map)]
-          (with-context ^ExecutionContext context
-            (handler result exception))))
-      (onFailedAttempt [result exception context]
-        (when-let [handler (:on-failed-attempt policy-map)]
-          (with-context ^ExecutionContext context
-            (handler result exception))))
-      (onFailure [result exception context]
-        (when-let [handler (:on-failure policy-map)]
-          (with-context ^ExecutionContext context
-            (handler result exception))))
-      (onRetry [result exception context]
-        (when-let [handler (:on-retry policy-map)]
-          (with-context  ^ExecutionContext context
-            (handler result exception))))
-      (onSuccess [result context]
-        (when-let [handler (:on-success policy-map)]
-          (with-context ^ExecutionContext context
-            (handler result))))
-      (onRetriesExceeded [result exception]
-        (when-let [handler (:on-retries-exceeded policy-map)]
-          (handler result exception))))))
 
 (defn ^:no-doc fallback [opts]
   (when-let [fb (:fallback opts)]
-    (u/fn-as-bi-function
-     (if-not (fn? fb)
-       (constantly fb)
-       fb))))
+    (Fallback/of ^CheckedFunction
+     (u/fn-as-checked-function
+      (fn [^ExecutionAttemptedEvent exec-event]
+       (let [fb (if-not (fn? fb) (constantly fb) fb)]
+         (with-context exec-event
+           (fb (.getLastFailure exec-event) (.getLastResult exec-event)))))))))
 
 (defmacro ^{:doc "Predefined retry policy.
 #### Available options
@@ -150,27 +169,6 @@
 * `:jitter-factor` random factor for each delay
 * `:jitter-ms` random time `(-jitter-ms, jitter-ms)` adds to each delay
 
-##### Use pre-defined policy
-
-You can put together all those retry policies in a `defretrypolicy`.
-And use `:policy` option in option map.
-
-```clojure
-(diehard/defretrypolicy policy
-  {:max-retries 5
-   :backoff-ms [1000 10000]})
-
-(diehard/with-retry {:policy policy}
-  ;; your code here
-  )
-```
-"}
-  defretrypolicy [name opts]
-  `(let [the-opts# ~opts]
-     (u/verify-opt-map-keys-with-spec :retry/retry-policy-new the-opts#)
-     (def ~name (retry-policy-from-config the-opts#))))
-
-(defmacro ^{:doc "Predefined listener.
 ##### Retry Listeners
 
 * `:on-abort` accepts a function which takes `result`, `exception` as
@@ -192,21 +190,25 @@ And use `:policy` option in option map.
   `exception` as arguments, called when max retries or max duration have
   been exceeded.
 
-##### Use predefined listeners
+##### Use pre-defined policy
+
+You can put together all those retry policies in a `defretrypolicy`.
+And use `:policy` option in option map.
 
 ```clojure
-(diehard/deflistener listener
-  {:on-retry (fn [return-value exception-thrown] (println \"retried\"))})
+(diehard/defretrypolicy policy
+  {:max-retries 5
+   :backoff-ms [1000 10000]})
 
-(diehard/with-retry {:policy policy :listener listener}
+(diehard/with-retry {:policy policy}
   ;; your code here
   )
 ```
 "}
-  deflistener [name opts]
+  defretrypolicy [name opts]
   `(let [the-opts# ~opts]
-     (u/verify-opt-map-keys-with-spec :retry/retry-listener-new the-opts#)
-     (def ~name (listeners-from-config the-opts#))))
+     (u/verify-opt-map-keys-with-spec :retry/retry-policy-new the-opts#)
+     (def ~name (retry-policy-from-config the-opts#))))
 
 (defmacro ^{:doc "Retry policy protected block.
 If the return value of or exception thrown from the code block matches
@@ -243,6 +245,24 @@ the last execution. If `:circuit-breaker` is set, it will throw
 * `:delay-ms` use constant delay between each retry
 * `:jitter-factor` random factor for each delay
 * `:jitter-ms` random time `(-jitter-ms, jitter-ms)` adds to each delay
+
+##### Retry Listeners
+
+* `:on-abort` accepts a function which takes `result`, `exception` as
+  arguments, called when retry aborted
+* `:on-failed-attempt` accepts a function which takes `result`,
+  `exception` as arguments, called when execution failed (matches
+  retry criteria)
+* `:on-failure` accepts a function which takes `result`,
+  `exception` as arguments, called when existing `retry` block with
+  failure (matches retry criteria)
+* `:on-success` accepts a function which takes `result` as arguments,
+  called when existing `retry` block with success (mismatches retry
+  criteria)
+* `:on-retry` accepts a function which takes `result` and `exception` as
+  arguments, called when a retry attempted.
+* `:on-retries-exceeded` accepts a function which takes `result` and
+  `exception` as arguments, called when retries exceeded
 
 ##### Use pre-defined policy
 
@@ -319,24 +339,26 @@ It will work together with retry policy as quit criteria.
   `(let [the-opt# ~opt]
      (u/verify-opt-map-keys-with-spec :retry/retry-block the-opt#)
      (let [retry-policy# (retry-policy-from-config the-opt#)
-           listeners# (listeners-from-config the-opt#)
            fallback# (fallback the-opt#)
+           cb# (:circuit-breaker the-opt#)
 
-           failsafe# (.. (Failsafe/with ^RetryPolicy retry-policy#)
-                         (with ^Listeners listeners#))
-           failsafe# (if-let [cb# (:circuit-breaker the-opt#)]
-                       (.with ^SyncFailsafe failsafe# ^CircuitBreaker cb#)
+           policies# (into-array FailurePolicy (filter some? [retry-policy# fallback# cb#]))
+
+           failsafe# (Failsafe/with policies#)
+           failsafe# (if-let [on-complete# (:on-complete the-opt#)]
+                       (.onComplete failsafe#
+                                    (u/fn-as-consumer
+                                     (fn [^ExecutionCompletedEvent event#]
+                                       (with-context event#
+                                         (on-complete# (.getResult event#)
+                                                       (.getFailure event#))))))
                        failsafe#)
-           failsafe# (if fallback#
-                       (.withFallback ^SyncFailsafe failsafe#
-                                      ^CheckedBiFunction fallback#)
-                       failsafe#)
-           callable# (reify ContextualCallable
-                       (call [_ ^ExecutionContext ctx#]
+           callable# (reify ContextualSupplier
+                       (get [_ ^ExecutionContext ctx#]
                          (with-context ctx#
                            ~@body)))]
        (try
-         (.get ^SyncFailsafe failsafe# ^ContextualCallable callable#)
+         (.get ^FailsafeExecutor failsafe# ^ContextualSupplier callable#)
          (catch CircuitBreakerOpenException e#
            (throw e#))
          (catch FailsafeException e#
@@ -414,10 +436,25 @@ You can always check circuit breaker state with
   `(let [opts# (if-not (map? ~cb)
                  {:circuitbreaker ~cb}
                  ~cb)
+         fallback# (fallback opts#)
          cb# (:circuitbreaker opts#)
-         failsafe# (Failsafe/with ^CircuitBreaker cb#)]
+
+         policies# (into-array FailurePolicy (filter some? [cb# fallback#]))
+         failsafe# (Failsafe/with policies#)
+         failsafe# (if-let [on-complete# (:on-complete opts#)]
+                     (.onComplete failsafe#
+                                  (u/fn-as-consumer
+                                   (fn [^ExecutionCompletedEvent event#]
+                                     (with-context event#
+                                       (on-complete# (.getResult event#)
+                                                     (.getFailure event#))))))
+                     failsafe#)
+
+         supplier# (reify CheckedSupplier
+                    (get [_]
+                      ~@body))]
      (try
-       (.get ^SyncFailsafe failsafe# ^Callable (fn [] ~@body))
+       (.get ^FailsafeExecutor failsafe# ^CheckedSupplier supplier#)
        (catch CircuitBreakerOpenException e#
          (throw e#))
        (catch FailsafeException e#

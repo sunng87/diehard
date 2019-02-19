@@ -45,7 +45,6 @@
 (s/def :retry/jitter-factor double?)
 (s/def :retry/jitter-ms int?)
 
-#_(s/def :retry/listener #(instance? Listeners %))
 (s/def :retry/on-abort fn?)
 (s/def :retry/on-complete fn?)
 (s/def :retry/on-failed-attempt fn?)
@@ -62,10 +61,9 @@
                       :retry/retry-if :retry/retry-on :retry/retry-when
                       :retry/abort-if :retry/abort-on :retry/abort-when
                       :retry/backoff-ms :retry/max-retries :retry/max-duration-ms
-                      :retry/delay-ms :retry/jitter-factor :retry/jitter-ms]))
+                      :retry/delay-ms :retry/jitter-factor :retry/jitter-ms
 
-(s/def :retry/retry-listener-new
-  (only-keys :opt-un [:retry/on-abort :retry/on-complete :retry/on-failed-attempt
+                      :retry/on-abort :retry/on-complete :retry/on-failed-attempt
                       :retry/on-failure :retry/on-retry :retry/on-retries-exceeded
                       :retry/on-success :retry/listener]))
 

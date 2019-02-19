@@ -1,6 +1,7 @@
 (ns diehard.circuit-breaker
   (:require [diehard.util :as u])
-  (:import [java.util.concurrent TimeUnit]
+  (:import [java.time Duration]
+           [java.time.temporal ChronoUnit]
            [net.jodah.failsafe CircuitBreaker]))
 
 (def ^{:const true :no-doc true}
@@ -17,16 +18,16 @@
   (u/verify-opt-map-keys-with-spec :circuit-breaker/circuit-breaker opts)
   (let [cb (CircuitBreaker.)]
     (when (contains? opts :fail-on)
-      (.failOn cb (u/predicate-or-value (:fail-on opts))))
+      (.handle cb (u/predicate-or-value (:fail-on opts))))
     (when (contains? opts :fail-if)
-      (.failIf cb (u/bipredicate (:fail-if opts))))
+      (.handleIf cb (u/bipredicate (:fail-if opts))))
     (when (contains? opts :fail-when)
-      (.failWhen cb (:fail-when opts)))
+      (.handleResult cb (:fail-when opts)))
     (when-let [timeout (:timeout-ms opts)]
-      (.withTimeout cb timeout TimeUnit/MILLISECONDS))
+      (.withTimeout cb timeout ChronoUnit/MILLIS))
 
     (when-let [delay (:delay-ms opts)]
-      (.withDelay cb delay TimeUnit/MILLISECONDS))
+      (.withDelay cb (Duration/ofMillis delay)))
 
     (when-let [failure-threshold (:failure-threshold opts)]
       (.withFailureThreshold cb failure-threshold))

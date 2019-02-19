@@ -137,8 +137,8 @@
       (are [x y] (= x y)
         11 @retry-counter
         12 @failed-attempt-counter
-        0 @failure-counter
-        0 @complete-counter
+        1 @failure-counter
+        1 @complete-counter
         1 @abort-counter
         0 @retries-exceeded-counter))))
 
@@ -172,16 +172,16 @@
 (deftest test-circuit-breaker-params
   (testing "failure threshold ratio"
     (defcircuitbreaker test-cb-p1 {:failure-threshold-ratio [7 10]})
-    (is (= (.ratio (Ratio. 7 10)) (.ratio (.getFailureThreshold test-cb-p1)))))
+    (is (= (Ratio. 7 10) (.getFailureThreshold test-cb-p1))))
   (testing "failure threshold"
     (defcircuitbreaker test-cb-p2 {:failure-threshold 7})
-    (is (= 7 (.numerator (.getFailureThreshold test-cb-p2)))))
+    (is (= 7 (.getNumerator (.getFailureThreshold test-cb-p2)))))
   (testing "success threshold ratio"
     (defcircuitbreaker test-cb-p3 {:success-threshold-ratio [10 10]})
-    (is (= (.ratio (Ratio. 10 10)) (.ratio (.getSuccessThreshold test-cb-p3)))))
+    (is (= (Ratio. 10 10) (.getSuccessThreshold test-cb-p3))))
   (testing "success threshold"
     (defcircuitbreaker test-cb-p4 {:success-threshold 10})
-    (is (= 10 (.numerator (.getSuccessThreshold test-cb-p4))))))
+    (is (= 10 (.getNumerator (.getSuccessThreshold test-cb-p4))))))
 
 (deftest test-retry-policy-params
   (testing "retry policy param"

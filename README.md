@@ -81,7 +81,7 @@ More options can be found in the documentation
 
 ## License
 
-Copyright © 2016-2018 Ning Sun
+Copyright © 2016-2019 Ning Sun
 
 Distributed under the Eclipse Public License either version 1.0 or (at
 your option) any later version.
@@ -90,4 +90,3 @@ your option) any later version.
 
 I'm now accepting donation on [liberapay](https://liberapay.com/Sunng/donate),
 if you find my work helpful and want to keep it going.
-

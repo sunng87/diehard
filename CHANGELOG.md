@@ -1,5 +1,13 @@
 # Change Log
 
+## [0.8.0] - 2019-02-19
+
+### Changed
+
+- Updated Failsafe to 2.0.1
+- `on-complete` and `on-failure` callback in called when retry aborted
+- listeners now can be configured with `defretrypolicy`
+
 ## [0.7.2] - 2018-09-17
 
 ### Changed

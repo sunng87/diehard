@@ -132,7 +132,7 @@
 
 
 (defn ^:no-doc fallback [opts]
-  (when-let [fb (:fallback opts)]
+  (when-let [fb (u/not-nil (:fallback opts))]
     (Fallback/of ^CheckedFunction
      (u/fn-as-checked-function
       (fn [^ExecutionAttemptedEvent exec-event]

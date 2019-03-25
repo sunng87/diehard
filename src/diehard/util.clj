@@ -43,3 +43,6 @@
 (defn fn-as-checked-function [f]
   (reify CheckedFunction
     (apply [_ t] (f t))))
+
+(defn not-nil [v]
+  (when (some? v) v))

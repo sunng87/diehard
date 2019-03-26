@@ -1,5 +1,11 @@
 # Change Log
 
+## [0.8.2] - 2019-03-26
+
+### Changed
+
+- Fixed issue when `fallback` was provided falsey value
+
 ## [0.8.0] - 2019-02-19
 
 ### Changed

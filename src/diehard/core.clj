@@ -132,14 +132,13 @@
 
 
 (defn ^:no-doc fallback [opts]
-  (let [fb (:fallback opts)]
-    (when-not (nil? fb)
-      (Fallback/of ^CheckedFunction
-                   (u/fn-as-checked-function
-                    (fn [^ExecutionAttemptedEvent exec-event]
-                      (let [fb (if-not (fn? fb) (constantly fb) fb)]
-                        (with-context exec-event
-                          (fb (.getLastFailure exec-event) (.getLastResult exec-event))))))))))
+  (when-some [fb (:fallback opts)]
+    (Fallback/of ^CheckedFunction
+                 (u/fn-as-checked-function
+                   (fn [^ExecutionAttemptedEvent exec-event]
+                     (let [fb (if-not (fn? fb) (constantly fb) fb)]
+                       (with-context exec-event
+                         (fb (.getLastFailure exec-event) (.getLastResult exec-event)))))))))
 
 (defmacro ^{:doc "Predefined retry policy.
 #### Available options

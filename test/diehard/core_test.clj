@@ -151,11 +151,14 @@
                            :retry-if (fn [v e] (< v 10))}
                 *executions*)))
     (is (= false (with-retry {:fallback false :max-retries 2} (throw (Exception.)))))
-    (let [counter (atom 0)]
-      (with-retry {:fallback (fn [& _] (swap! counter inc))
+    (let [fallback-counter (atom 0)
+          retry-counter (atom 0)]
+      (with-retry {:fallback (fn [& _] (swap! fallback-counter inc))
                    :max-retries 5}
+        (swap! retry-counter inc)
         (throw (Exception.)))
-      (is (= 1 @counter))))
+      (is (= 1 @fallback-counter))
+      (is (= 6 @retry-counter))))
 
   (testing "predefined policy"
     (defretrypolicy the-test-policy

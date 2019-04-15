@@ -342,7 +342,7 @@ It will work together with retry policy as quit criteria.
            fallback# (fallback the-opt#)
            cb# (:circuit-breaker the-opt#)
 
-           policies# (into-array FailurePolicy (filter some? [retry-policy# fallback# cb#]))
+           policies# (into-array FailurePolicy (filter some? [fallback# retry-policy# cb#]))
 
            failsafe# (Failsafe/with policies#)
            failsafe# (if-let [on-complete# (:on-complete the-opt#)]
@@ -439,7 +439,7 @@ You can always check circuit breaker state with
          fallback# (fallback opts#)
          cb# (:circuitbreaker opts#)
 
-         policies# (into-array FailurePolicy (filter some? [cb# fallback#]))
+         policies# (into-array FailurePolicy (filter some? [fallback# cb#]))
          failsafe# (Failsafe/with policies#)
          failsafe# (if-let [on-complete# (:on-complete opts#)]
                      (.onComplete failsafe#

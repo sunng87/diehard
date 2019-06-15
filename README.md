@@ -77,7 +77,7 @@ Bulkhead allows you to limit concurrent execution on a code block.
 ## Docs
 
 More options can be found in the documentation
-[here](https://sunng87.github.io/diehard).
+[from cljdoc](https://cljdoc.org/d/diehard/diehard/).
 
 ## License
 

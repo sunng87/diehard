@@ -74,6 +74,33 @@ Bulkhead allows you to limit concurrent execution on a code block.
   (send-people-to-the-moon))
 ```
 
+## Examples
+### Retry block
+
+```clojure
+(dh/with-retry {:retry-on          Exception
+                :max-retries       3
+                :on-retry          (fn [val ex] (prn "retrying..."))
+                :on-failure        (fn [_ _] (prn "failed..."))
+                :on-failed-attempt (fn [_ _] (prn "failed attempt"))
+                :on-success        (fn [_] (prn "did it! success!"))}
+               (throw (ex-info "not good" {:not "good"})))
+```
+
+output:
+```
+"failed attempt"
+"retrying..."
+"failed attempt"
+"retrying..."
+"failed attempt"
+"retrying..."
+"failed attempt"
+"failed..."
+Execution error (ExceptionInfo) at main.user$eval27430$reify__27441/get (form-init6791465293873302710.clj:7).
+not good
+```
+
 ## Docs
 
 More options can be found in the documentation

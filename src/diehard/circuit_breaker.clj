@@ -1,7 +1,6 @@
 (ns diehard.circuit-breaker
   (:require [diehard.util :as u])
   (:import [java.time Duration]
-           [java.time.temporal ChronoUnit]
            [net.jodah.failsafe CircuitBreaker]))
 
 (def ^{:const true :no-doc true}
@@ -24,7 +23,7 @@
     (when (contains? opts :fail-when)
       (.handleResult cb (:fail-when opts)))
     (when-let [timeout (:timeout-ms opts)]
-      (.withTimeout cb timeout ChronoUnit/MILLIS))
+      (.withTimeout cb (Duration/ofMillis timeout)))
 
     (when-let [delay (:delay-ms opts)]
       (.withDelay cb (Duration/ofMillis delay)))

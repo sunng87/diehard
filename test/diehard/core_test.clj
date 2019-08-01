@@ -190,7 +190,10 @@
     (is (= (Ratio. 10 10) (.getSuccessThreshold test-cb-p3))))
   (testing "success threshold"
     (defcircuitbreaker test-cb-p4 {:success-threshold 10})
-    (is (= 10 (.getNumerator (.getSuccessThreshold test-cb-p4))))))
+    (is (= 10 (.getNumerator (.getSuccessThreshold test-cb-p4)))))
+  (testing "timeout"
+    (defcircuitbreaker test-cb-p5 {:timeout-ms 1})
+    (is (= 1000000 (.getNano (.getTimeout test-cb-p5))))))
 
 (deftest test-retry-policy-params
   (testing "retry policy param"

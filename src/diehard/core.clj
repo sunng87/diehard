@@ -33,13 +33,13 @@
   (set/union policy-allowed-keys listener-allowed-keys #{:fallback}))
 
 (def ^{:dynamic true
-       :doc "Available in retry block. Contexual value represents time elasped since first attempt"}
+       :doc "Available in retry block. Contextual value represents time elasped since first attempt"}
   *elapsed-time-ms*)
 (def ^{:dynamic true
-       :doc "Available in retry block. Contexual value represents execution times"}
+       :doc "Available in retry block. Contextual value represents execution times"}
   *executions*)
 (def ^{:dynamic true
-       :doc "Available in retry block. Contexual value represents first attempt time"}
+       :doc "Available in retry block. Contextual value represents first attempt time"}
   *start-time-ms*)
 
 (defmacro ^:no-doc with-context [ctx & body]
@@ -138,7 +138,7 @@
                    (fn [^ExecutionAttemptedEvent exec-event]
                      (let [fb (if-not (fn? fb) (constantly fb) fb)]
                        (with-context exec-event
-                         (fb (.getLastFailure exec-event) (.getLastResult exec-event)))))))))
+                         (fb (.getLastResult exec-event) (.getLastFailure exec-event)))))))))
 
 (defmacro ^{:doc "Predefined retry policy.
 #### Available options

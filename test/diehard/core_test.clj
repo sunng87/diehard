@@ -1,7 +1,8 @@
 (ns diehard.core-test
   (:require [clojure.test :refer :all]
+            [diehard.circuit-breaker :as cb]
             [diehard.core :refer :all])
-  (:import [net.jodah.failsafe FailsafeException CircuitBreakerOpenException]
+  (:import [net.jodah.failsafe CircuitBreakerOpenException]
            [net.jodah.failsafe.util Ratio]
            [java.util.concurrent CountDownLatch]))
 
@@ -150,15 +151,50 @@
                                        v)
                            :retry-if (fn [v e] (< v 10))}
                 *executions*)))
-    (is (= false (with-retry {:fallback false :max-retries 2} (throw (Exception.)))))
+    (is (= false (with-retry {:fallback false :max-retries 2} (throw (Exception.))))))
+
+  (testing "fallback function"
     (let [fallback-counter (atom 0)
           retry-counter (atom 0)]
-      (with-retry {:fallback (fn [& _] (swap! fallback-counter inc))
+      (with-retry {:fallback    (fn [& _] (swap! fallback-counter inc))
                    :max-retries 5}
-        (swap! retry-counter inc)
-        (throw (Exception.)))
+                  (swap! retry-counter inc)
+                  (throw (Exception.)))
       (is (= 1 @fallback-counter))
       (is (= 6 @retry-counter))))
+
+  (testing "with-retry given a fallback function has been registered the arguments passed in should be [result exception]"
+    (let [res (with-retry {:fallback    (fn [v e]
+                                          (is (not (nil? e)))
+                                          (is (nil? v))
+                                          43)
+                           :max-retries 5}
+                          (throw (Exception.)))]
+      (is (= res 43))))
+
+  (testing "with-retry given the circuit breaker is closed should invoke fallback only when retries have been exhausted"
+    (let [cb (cb/circuit-breaker {:failure-threshold 10
+                                  :delay-ms          10000})
+          execution-counter (atom 0)
+          fallback-counter (atom 0)
+          execution-count 7
+          fn-with-fallback (fn [exec-count]
+                             (with-retry {:fallback        (fn [v e]
+                                                             (is (not (nil? e)))
+                                                             (is (nil? v))
+                                                             (swap! fallback-counter inc)
+                                                             exec-count)
+                                          :circuit-breaker cb
+                                          ;; If we don't put this in the fallback will not be invoked even for failed
+                                          ;; executions, until the circuit breaker moves into the open state
+                                          :max-retries     0}
+                                         (swap! execution-counter inc)
+                                         (throw (Exception. "Expected exception")))) ;; every execution will fail
+          res (->> (range 0 execution-count)
+                   (map fn-with-fallback))]
+      (is (= (range 0 execution-count) res))
+      (is (= execution-count @execution-counter))
+      (is (= execution-count @fallback-counter))))
 
   (testing "predefined policy"
     (defretrypolicy the-test-policy

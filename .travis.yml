@@ -1,4 +1,1 @@
 language: clojure
-jdk:
-  - oraclejdk9
-  - oraclejdk8

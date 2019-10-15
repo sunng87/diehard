@@ -164,7 +164,7 @@
 
 * `:backoff-ms` specify a vector `[initial-delay-ms max-delay-ms
   multiplier]` to control the delay between each retry, the delay for
-  **n**th retry will be `(max (* initial-delay-ms n) max-delay-ms)`
+  **n**th retry will be `(max (* initial-delay-ms (expt 2 (- n 1))) max-delay-ms)`
 * `:delay-ms` use constant delay between each retry
 * `:jitter-factor` random factor for each delay
 * `:jitter-ms` random time `(-jitter-ms, jitter-ms)` adds to each delay
@@ -241,7 +241,7 @@ the last execution. If `:circuit-breaker` is set, it will throw
 
 * `:backoff-ms` specify a vector `[initial-delay-ms max-delay-ms
   multiplier]` to control the delay between each retry, the delay for
-  **n**th retry will be `(max (* initial-delay-ms n) max-delay-ms)`
+  **n**th retry will be `(max (* initial-delay-ms (expt 2 (- n 1))) max-delay-ms)`
 * `:delay-ms` use constant delay between each retry
 * `:jitter-factor` random factor for each delay
 * `:jitter-ms` random time `(-jitter-ms, jitter-ms)` adds to each delay

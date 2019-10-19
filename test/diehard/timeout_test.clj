@@ -4,7 +4,8 @@
             [diehard.timeout :as dt])
   (:import (java.time Duration)
            (net.jodah.failsafe TimeoutExceededException)
-           (java.util.concurrent ExecutionException)))
+           (java.util.concurrent ExecutionException)
+           (clojure.lang ExceptionInfo)))
 
 (def timeout-duration 50)
 
@@ -112,3 +113,14 @@
                                                                                        (Thread/sleep 60)
                                                                                        "result")))))
       (is (= 1 @call-count)))))
+
+(deftest timeout-test
+  (testing "should raise error on receiving unknown keys"
+    (is (thrown? ExceptionInfo
+                 (dt/timeout (Duration/ofMillis timeout-duration) {:on-success  (fn [_])
+                                                                   :unknown-key 1}))))
+  (testing "should raise error on receiving unknown types"
+    (is (thrown? ExceptionInfo
+                 (dt/timeout (Duration/ofMillis timeout-duration) {:on-success  "string instead of function"})))
+    (is (thrown? ExceptionInfo
+                 (dt/timeout (Duration/ofMillis timeout-duration) {:on-failure  "string instead of function"})))))

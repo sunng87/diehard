@@ -10,6 +10,7 @@
   ([^Duration duration]
    (timeout duration {}))
   ([^Duration duration, opts]
+   (util/verify-opt-map-keys-with-spec :timeout/timeout opts)
    (let [timeout-policy (Timeout/of duration)]
      (when (contains? opts :on-success)
        (.onSuccess timeout-policy (util/fn-as-consumer (:on-success opts))))

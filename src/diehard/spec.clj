@@ -100,6 +100,9 @@
 (s/def :circuit-breaker/on-close fn?)
 (s/def :circuit-breaker/on-half-open fn?)
 
+(s/def :timeout/on-success fn?)
+(s/def :timeout/on-failure fn?)
+
 (s/def :circuit-breaker/circuit-breaker
   (only-keys :opt-un [:circuit-breaker/fail-if
                       :circuit-breaker/fail-on
@@ -116,6 +119,10 @@
 
                       :circuit-breaker/delay-ms
                       :circuit-breaker/timeout-ms]))
+
+(s/def :timeout/timeout
+  (only-keys :opt-un [:timeout/on-success
+                      :timeout/on-failure]))
 
 ;; rate limiter
 (s/def :rate-limiter/rate int?)

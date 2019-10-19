@@ -3,12 +3,11 @@
             [diehard.util :as u]
             [diehard.circuit-breaker :as cb]
             [diehard.rate-limiter :as rl]
+            [diehard.timeout :as dt]
             [diehard.bulkhead :as bh])
-  (:import [java.util List]
-           [java.time Duration]
+  (:import [java.time Duration]
            [java.time.temporal ChronoUnit]
-           [net.jodah.failsafe Failsafe FailurePolicy Fallback RetryPolicy
-            CircuitBreaker FailsafeExecutor
+           [net.jodah.failsafe Failsafe FailurePolicy Fallback RetryPolicy FailsafeExecutor
             ExecutionContext FailsafeException
             CircuitBreakerOpenException]
            [net.jodah.failsafe.event ExecutionAttemptedEvent
@@ -527,6 +526,17 @@ by setting `:permits` option.
   defbulkhead [name opts]
   `(def ~name
      (bh/bulkhead (u/verify-opt-map-keys-with-spec :bulkhead/bulkhead-new ~opts))))
+
+(defmacro
+  ^{:doc "Create timeout config from option map.
+* Define a timeout for an operation to executre"}
+  deftimeout
+  ([name ^Duration duration]
+   `(def ~name
+      (dt/timeout ~duration)))
+  ([name ^Duration duration, opts]
+   `(def ~name
+      (dt/timeout ~duration ~opts))))
 
 (defmacro
   ^{:doc "Bulkhead block. Only given number of executions is allowed to be executed in parallel.

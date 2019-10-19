@@ -2,7 +2,7 @@
   (:require [diehard.spec :as ds]
             [clojure.spec.alpha :as s])
   (:import [net.jodah.failsafe.function CheckedRunnable CheckedConsumer
-            CheckedFunction]
+                                        CheckedFunction CheckedSupplier]
            [java.util List]
            [java.util.function Predicate BiPredicate]))
 
@@ -43,3 +43,7 @@
 (defn fn-as-checked-function [f]
   (reify CheckedFunction
     (apply [_ t] (f t))))
+
+(defn fn-as-checked-supplier [f]
+  (reify CheckedSupplier
+    (get [_] (f))))

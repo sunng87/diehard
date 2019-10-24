@@ -8,7 +8,7 @@
   (:import [java.time Duration]
            [java.time.temporal ChronoUnit]
            [net.jodah.failsafe Failsafe FailurePolicy Fallback RetryPolicy FailsafeExecutor
-            ExecutionContext FailsafeException
+            ExecutionContext FailsafeException Timeout
             CircuitBreakerOpenException]
            [net.jodah.failsafe.event ExecutionAttemptedEvent
             ExecutionCompletedEvent]
@@ -577,7 +577,7 @@ when `max-wait-ms` exceeded, an `ex-info` will be thrown with `ex-data` as `{:bu
          ;; TODO: support async in next release
          async?# (:async? opts#)
 
-         policies# (into-array Policy [policy#])
+         policies# (into-array Timeout [policy#])
          failsafe# (Failsafe/with policies#)]
      (.get failsafe# (reify CheckedSupplier
                        (get [_]

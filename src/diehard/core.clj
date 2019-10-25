@@ -570,7 +570,14 @@ when `max-wait-ms` exceeded, an `ex-info` will be thrown with `ex-data` as `{:bu
          (bh/release! bulkhead#)))))
 
 (defmacro
-  ^{:doc "Timeout block TODO: doc"}
+  ^{:doc "Timeout block. This block will throw TimeoutExceededException when
+configured time elapsed.
+
+Available optios:
+* `timeout-ms`: required timeout
+* `on-success`: the callback when block execution succeeded
+* `on-failure`: the failure when block execution timed out
+"}
   with-timeout [opts & body]
   `(let [opts# ~opts
          policy# (dt/timeout-policy-from-config-map opts#)

@@ -79,22 +79,11 @@ Bulkhead allows you to limit concurrent execution on a code block.
 Timeouts allow you to fail an execution with `TimeoutExceededException` if it takes too long to complete
 
 ```clojure
-(ns diehard.example
-  (:require [diehard.core :refer :all]
-            [diehard.timeout :as dt])
-  (:import (java.time Duration)))
+(require '[diehard.core :as dh])
 
-(defn -main []
-  (deftimeout timeout (Duration/ofSeconds 4) {:on-success (fn [_]
-                                                            (println "executed successfully"))})
-  (println (dt/get-with-timeout timeout (fn []
-                                          (Thread/sleep 3000)
-                                          "result")))
-  (dt/run-with-timeout timeout (fn []
-                                 (Thread/sleep 3000)
-                                 (println "result"))))
+(with-timeout {:timeout-ms 5000}
+  (fly-me-to-the-moon))
 ```
-Apart from `get-with-timeout` and `run-with-timeout`, this library also offers `get-async-with-timeout` and `run-async-with-timeout` to execute a block asynchronously against a timeout. 
 
 ## Examples
 ### Retry block

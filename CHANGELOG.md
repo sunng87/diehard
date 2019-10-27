@@ -1,5 +1,11 @@
 # Change Log
 
+## [0.9.0] - 2019-19-27
+
+### Added
+
+- Timeout API
+
 ## [0.8.2] - 2019-03-26
 
 ### Changed

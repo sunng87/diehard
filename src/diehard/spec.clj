@@ -120,8 +120,11 @@
                       :circuit-breaker/delay-ms
                       :circuit-breaker/timeout-ms]))
 
-(s/def :timeout/timeout
-  (only-keys :opt-un [:timeout/on-success
+(s/def :timeout/timeout-ms int?)
+(s/def :timeout/async? boolean?)
+(s/def :timeout/timeout-new
+  (only-keys :req-un [:timeout/timeout-ms]
+             :opt-un [:timeout/on-success
                       :timeout/on-failure]))
 
 ;; rate limiter

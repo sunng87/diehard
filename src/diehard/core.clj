@@ -8,7 +8,7 @@
   (:import [java.time Duration]
            [java.time.temporal ChronoUnit]
            [net.jodah.failsafe Failsafe FailurePolicy Fallback RetryPolicy FailsafeExecutor
-            ExecutionContext FailsafeException
+            ExecutionContext FailsafeException Timeout
             CircuitBreakerOpenException]
            [net.jodah.failsafe.event ExecutionAttemptedEvent
             ExecutionCompletedEvent]
@@ -528,17 +528,6 @@ by setting `:permits` option.
      (bh/bulkhead (u/verify-opt-map-keys-with-spec :bulkhead/bulkhead-new ~opts))))
 
 (defmacro
-  ^{:doc "Create timeout config from option map.
-* Define a timeout for an operation to executre"}
-  deftimeout
-  ([name ^Duration duration]
-   `(def ~name
-      (dt/timeout ~duration)))
-  ([name ^Duration duration, opts]
-   `(def ~name
-      (dt/timeout ~duration ~opts))))
-
-(defmacro
   ^{:doc "Bulkhead block. Only given number of executions is allowed to be executed in parallel.
 
 ```clojure
@@ -579,3 +568,24 @@ when `max-wait-ms` exceeded, an `ex-info` will be thrown with `ex-data` as `{:bu
        ~@body
        (finally
          (bh/release! bulkhead#)))))
+
+(defmacro
+  ^{:doc "Timeout block. This block will throw TimeoutExceededException when
+configured time elapsed.
+
+Available optios:
+* `timeout-ms`: required timeout
+* `on-success`: the callback when block execution succeeded
+* `on-failure`: the failure when block execution timed out
+"}
+  with-timeout [opts & body]
+  `(let [opts# ~opts
+         policy# (dt/timeout-policy-from-config-map opts#)
+         ;; TODO: support async in next release
+         async?# (:async? opts#)
+
+         policies# (into-array Timeout [policy#])
+         failsafe# (Failsafe/with policies#)]
+     (.get failsafe# (reify CheckedSupplier
+                       (get [_]
+                         ~@body)))))

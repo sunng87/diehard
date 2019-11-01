@@ -6,7 +6,7 @@
   :dependencies [[org.clojure/clojure "1.10.1"]
                  [net.jodah/failsafe "2.3.1"]
                  [org.clojure/spec.alpha "0.2.176"]]
-  :plugins [[lein-codox "0.10.3"]
+  :plugins [[lein-codox "0.10.7"]
             [lein-eftest "0.5.2"]]
   :codox {:output-path "docs/"
           :source-uri "https://github.com/sunng87/diehard/blob/master/{filepath}#L{line}"

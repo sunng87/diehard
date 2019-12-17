@@ -11,4 +11,5 @@
   :codox {:output-path "docs/"
           :source-uri "https://github.com/sunng87/diehard/blob/master/{filepath}#L{line}"
           :metadata {:doc/format :markdown}}
-  :deploy-repositories {"releases" :clojars})
+  :deploy-repositories {"releases" :clojars}
+  :global-vars {*warn-on-reflection* true})

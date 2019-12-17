@@ -18,9 +18,10 @@
       parsed)))
 
 (defn predicate-or-value [v]
-  (if (fn? v)
-    (reify Predicate (test [_ c] (boolean (v c))))
-    ^List (if (vector? v) v [v])))
+  (cond
+    (fn? v) (reify Predicate (test [_ c] (boolean (v c))))
+    (vector? v) (reify Predicate (test [_ c] (contains? (set v) c)))
+    :else (reify Predicate (test [_ c] (= c v)))))
 
 (defn predicate [v]
   (reify Predicate
@@ -47,3 +48,6 @@
 (defn fn-as-checked-supplier [f]
   (reify CheckedSupplier
     (get [_] (f))))
+
+(defn as-vector [v]
+  (if (vector? v) v [v]))

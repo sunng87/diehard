@@ -7,6 +7,8 @@
             [diehard.bulkhead :as bh])
   (:import [java.time Duration]
            [java.time.temporal ChronoUnit]
+           [java.util List]
+           [java.util.function BiPredicate Predicate]
            [net.jodah.failsafe Failsafe FailurePolicy Fallback RetryPolicy FailsafeExecutor
             ExecutionContext FailsafeException Timeout
             CircuitBreakerOpenException]
@@ -50,19 +52,19 @@
 (defn ^:no-doc retry-policy-from-config [policy-map]
   (if-let [policy (:policy policy-map)]
 
-    (.copy policy)
+    (.copy ^RetryPolicy policy)
 
     (let [policy (RetryPolicy.)]
       (when (contains? policy-map :abort-if)
-        (.abortIf policy (u/bipredicate (:abort-if policy-map))))
+        (.abortIf policy ^BiPredicate (u/bipredicate (:abort-if policy-map))))
       (when (contains? policy-map :abort-on)
-        (.abortOn policy (u/predicate-or-value (:abort-on policy-map))))
+        (.abortOn policy ^Predicate (u/predicate-or-value (:abort-on policy-map))))
       (when (contains? policy-map :abort-when)
         (.abortWhen policy (:abort-when policy-map)))
       (when (contains? policy-map :retry-if)
-        (.handleIf policy (u/bipredicate (:retry-if policy-map))))
+        (.handleIf policy ^BiPredicate (u/bipredicate (:retry-if policy-map))))
       (when (contains? policy-map :retry-on)
-        (.handle policy (u/predicate-or-value (:retry-on policy-map))))
+        (.handle policy ^List (u/as-vector (:retry-on policy-map))))
       (when (contains? policy-map :retry-when)
         (if (fn? (:retry-when policy-map))
           (.handleResultIf policy (u/predicate (:retry-when policy-map)))
@@ -80,7 +82,7 @@
       (when-let [retries (:max-retries policy-map -1)]
         (.withMaxRetries policy retries))
       (when-let [jitter (:jitter-factor policy-map)]
-        (.withJitter policy jitter))
+        (.withJitter policy ^double jitter))
       (when-let [jitter (:jitter-ms policy-map)]
         (.withJitter policy (Duration/ofMillis jitter)))
 

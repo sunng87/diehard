@@ -12,46 +12,7 @@
     "Try to acquire given number of permits, allows blocking for at most `wait-ms` milliseconds.
     Return true if there are enough permits in permitted time."))
 
-(defn- refill [rate-limiter]
-  ;; refill
-  (let [now (System/currentTimeMillis)]
-    (swap! (.-state rate-limiter)
-           (fn [state]
-             (-> state
-                 (update :reserved-tokens
-                         #(if (> (:last-refill-ts state) 0)
-                            (max (- (.-max-tokens rate-limiter))
-                                 (- % (* (- now (:last-refill-ts state))
-                                         (.-rate rate-limiter))))
-                            %))
-                 (assoc :last-refill-ts now))))))
-
-(defn- acquire-sleep-ms [rate-limiter permits]
-  (let [{pending-tokens :reserved-tokens} (swap! (.-state rate-limiter)
-                                                 update :reserved-tokens + permits)]
-    (if (<= pending-tokens 0)
-      0
-      ;; time as milliseconds
-      (long (/ pending-tokens (.-rate rate-limiter))))))
-
-(defn- try-acquire-sleep-ms [rate-limiter permits max-wait-ms]
-  (try
-    (let [{pending-tokens :reserved-tokens}
-          (swap! (.-state rate-limiter)
-                 (fn [state]
-                   (update state :reserved-tokens
-                           (fn [pending-tokens]
-                             ;; test if we can pass in wait period
-                             (if (<= (- (+ pending-tokens permits)
-                                        (* max-wait-ms (.-rate rate-limiter)))
-                                     0)
-                               (+ pending-tokens permits)
-                               (throw (ex-info "Not enough permits." {:rate-limiter true})))))))]
-      (if (<= pending-tokens 0)
-        0
-        (long (/ pending-tokens (.-rate rate-limiter)))))
-    (catch clojure.lang.ExceptionInfo _
-      false)))
+(declare refill acquire-sleep-ms try-acquire-sleep-ms)
 
 (defn- do-acquire [rate-limiter permits]
   (refill rate-limiter)
@@ -83,6 +44,47 @@
           (when (> sleep 0)
             (Thread/sleep sleep))
           true)))))
+
+(defn- refill [^TokenBucketRateLimiter rate-limiter]
+  ;; refill
+  (let [now (System/currentTimeMillis)]
+    (swap! (.-state rate-limiter)
+           (fn [state]
+             (-> state
+                 (update :reserved-tokens
+                         #(if (> (:last-refill-ts state) 0)
+                            (max (- (.-max-tokens rate-limiter))
+                                 (- % (* (- now (:last-refill-ts state))
+                                         (.-rate rate-limiter))))
+                            %))
+                 (assoc :last-refill-ts now))))))
+
+(defn- acquire-sleep-ms [^TokenBucketRateLimiter rate-limiter permits]
+  (let [{pending-tokens :reserved-tokens} (swap! (.-state rate-limiter)
+                                                 update :reserved-tokens + permits)]
+    (if (<= pending-tokens 0)
+      0
+      ;; time as milliseconds
+      (long (/ pending-tokens (.-rate rate-limiter))))))
+
+(defn- try-acquire-sleep-ms [^TokenBucketRateLimiter rate-limiter permits max-wait-ms]
+  (try
+    (let [{pending-tokens :reserved-tokens}
+          (swap! (.-state rate-limiter)
+                 (fn [state]
+                   (update state :reserved-tokens
+                           (fn [pending-tokens]
+                             ;; test if we can pass in wait period
+                             (if (<= (- (+ pending-tokens permits)
+                                        (* max-wait-ms (.-rate rate-limiter)))
+                                     0)
+                               (+ pending-tokens permits)
+                               (throw (ex-info "Not enough permits." {:rate-limiter true})))))))]
+      (if (<= pending-tokens 0)
+        0
+        (long (/ pending-tokens (.-rate rate-limiter)))))
+    (catch clojure.lang.ExceptionInfo _
+      false)))
 
 (def ^{:const true :no-doc true}
   allowed-rate-limiter-option-keys

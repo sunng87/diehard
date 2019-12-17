@@ -1,6 +1,8 @@
 (ns diehard.circuit-breaker
   (:require [diehard.util :as u])
   (:import [java.time Duration]
+           [java.util List]
+           [java.util.function BiPredicate]
            [net.jodah.failsafe CircuitBreaker]))
 
 (def ^{:const true :no-doc true}
@@ -17,9 +19,9 @@
   (u/verify-opt-map-keys-with-spec :circuit-breaker/circuit-breaker opts)
   (let [cb (CircuitBreaker.)]
     (when (contains? opts :fail-on)
-      (.handle cb (u/predicate-or-value (:fail-on opts))))
+      (.handle cb ^List (u/as-vector (:fail-on opts))))
     (when (contains? opts :fail-if)
-      (.handleIf cb (u/bipredicate (:fail-if opts))))
+      (.handleIf cb ^BiPredicate (u/bipredicate (:fail-if opts))))
     (when (contains? opts :fail-when)
       (.handleResult cb (:fail-when opts)))
     (when-let [timeout (:timeout-ms opts)]

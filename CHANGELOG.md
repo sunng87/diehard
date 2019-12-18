@@ -1,6 +1,12 @@
 # Change Log
 
-## [0.9.0] - 2019-19-27
+## [0.9.1] - 2019-12-18
+
+### Fixed
+
+- Resolved reflection warnings
+
+## [0.9.0] - 2019-10-27
 
 ### Added
 

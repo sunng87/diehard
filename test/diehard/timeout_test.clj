@@ -14,11 +14,21 @@
                       (Thread/sleep 25)
                       "result"))))
 
-  (testing "get with timeout exception"
+  (testing "get exceeds timeout and throws timeout exception"
     (is (thrown? TimeoutExceededException
                  (with-timeout {:timeout-ms timeout-duration}
                    (Thread/sleep 60)
                    "result"))))
+  (testing "get given interrupt flag set exceeds timeout and throws"
+    (let [start (System/currentTimeMillis)
+          timeout-ms 500]
+      (is (thrown? TimeoutExceededException
+                   (with-timeout {:timeout-ms timeout-ms
+                                  :interrupt? true}
+                                 (Thread/sleep 5000)
+                                 "result")))
+      (let [end (System/currentTimeMillis)]
+        (is (< (- end start) (* 1.5 timeout-ms))))))
 
   (testing "get on success callback"
     (let [call-count (atom 0)]

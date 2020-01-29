@@ -1,5 +1,11 @@
 # Change Log
 
+## [0.9.2] - 2020-01-29
+
+### Added
+
+- `interrupt?` option for timeout block [#35]
+
 ## [0.9.1] - 2019-12-18
 
 ### Fixed

@@ -124,7 +124,8 @@
 (s/def :timeout/async? boolean?)
 (s/def :timeout/timeout-new
   (only-keys :req-un [:timeout/timeout-ms]
-             :opt-un [:timeout/on-success
+             :opt-un [:timeout/interrupt?
+                      :timeout/on-success
                       :timeout/on-failure]))
 
 ;; rate limiter

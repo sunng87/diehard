@@ -131,15 +131,14 @@
 
       policy)))
 
-
 (defn ^:no-doc fallback [opts]
   (when-some [fb (:fallback opts)]
     (Fallback/of ^CheckedFunction
-                 (u/fn-as-checked-function
-                   (fn [^ExecutionAttemptedEvent exec-event]
-                     (let [fb (if-not (fn? fb) (constantly fb) fb)]
-                       (with-context exec-event
-                         (fb (.getLastResult exec-event) (.getLastFailure exec-event)))))))))
+     (u/fn-as-checked-function
+      (fn [^ExecutionAttemptedEvent exec-event]
+        (let [fb (if-not (fn? fb) (constantly fb) fb)]
+          (with-context exec-event
+            (fb (.getLastResult exec-event) (.getLastFailure exec-event)))))))))
 
 (defmacro ^{:doc "Predefined retry policy.
 #### Available options
@@ -452,8 +451,8 @@ You can always check circuit breaker state with
                      failsafe#)
 
          supplier# (reify CheckedSupplier
-                    (get [_]
-                      ~@body))]
+                     (get [_]
+                       ~@body))]
      (try
        (.get ^FailsafeExecutor failsafe# ^CheckedSupplier supplier#)
        (catch CircuitBreakerOpenException e#

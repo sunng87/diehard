@@ -93,7 +93,7 @@
         *executions*)
       (is false)
       (catch Exception e
-        (is (not-empty (:clojure.spec.alpha/problems (ex-data e)) )))))
+        (is (not-empty (:clojure.spec.alpha/problems (ex-data e)))))))
 
   (testing "listeners"
     (let [retry-counter (atom 0)
@@ -134,14 +134,14 @@
           (if (even? *executions*)
             (throw (IllegalStateException.))
             *executions*)
-        (catch IllegalStateException _))
-      (are [x y] (= x y)
-        11 @retry-counter
-        12 @failed-attempt-counter
-        1 @failure-counter
-        1 @complete-counter
-        1 @abort-counter
-        0 @retries-exceeded-counter))))
+          (catch IllegalStateException _))
+        (are [x y] (= x y)
+          11 @retry-counter
+          12 @failed-attempt-counter
+          1 @failure-counter
+          1 @complete-counter
+          1 @abort-counter
+          0 @retries-exceeded-counter))))
 
   (testing "fallback value"
     (is (= 5 (with-retry {:fallback 5 :max-retries 10} (throw (Exception.)))))
@@ -158,8 +158,8 @@
           retry-counter (atom 0)]
       (with-retry {:fallback    (fn [& _] (swap! fallback-counter inc))
                    :max-retries 5}
-                  (swap! retry-counter inc)
-                  (throw (Exception.)))
+        (swap! retry-counter inc)
+        (throw (Exception.)))
       (is (= 1 @fallback-counter))
       (is (= 6 @retry-counter))))
 
@@ -169,7 +169,7 @@
                                           (is (nil? v))
                                           43)
                            :max-retries 5}
-                          (throw (Exception.)))]
+                (throw (Exception.)))]
       (is (= res 43))))
 
   (testing "with-retry given the circuit breaker is closed should invoke fallback only when retries have been exhausted"
@@ -188,8 +188,8 @@
                                           ;; If we don't put this in the fallback will not be invoked even for failed
                                           ;; executions, until the circuit breaker moves into the open state
                                           :max-retries     0}
-                                         (swap! execution-counter inc)
-                                         (throw (Exception. "Expected exception")))) ;; every execution will fail
+                               (swap! execution-counter inc)
+                               (throw (Exception. "Expected exception")))) ;; every execution will fail
           res (->> (range 0 execution-count)
                    (map fn-with-fallback))]
       (is (= (range 0 execution-count) res))
@@ -211,8 +211,6 @@
         (is false)
         (catch RuntimeException _
           (is (= 1 @retries)))))))
-
-
 
 (deftest test-circuit-breaker-params
   (testing "failure threshold ratio"
@@ -265,7 +263,7 @@
 (deftest test-circuit-breaker-with-retry-block
   (testing "circuit open within retry block"
     (defcircuitbreaker test-cb-2 {:failure-threshold 2
-                                :delay-ms 100000})
+                                  :delay-ms 100000})
     (try
       (with-retry {:circuit-breaker test-cb-2
                    :max-retries 100}

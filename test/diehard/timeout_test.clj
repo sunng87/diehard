@@ -25,8 +25,8 @@
       (is (thrown? TimeoutExceededException
                    (with-timeout {:timeout-ms timeout-ms
                                   :interrupt? true}
-                                 (Thread/sleep 5000)
-                                 "result")))
+                     (Thread/sleep 5000)
+                     "result")))
       (let [end (System/currentTimeMillis)]
         (is (< (- end start) (* 1.5 timeout-ms))))))
 
@@ -54,16 +54,13 @@
     (is (thrown? ExceptionInfo
                  (with-timeout {:timeout-ms 5000
                                 :on-success  (fn [_])
-                                :unknown-key 1}
-                   ))))
+                                :unknown-key 1}))))
   (testing "should raise error on receiving unknown types"
     (is (thrown? ExceptionInfo
                  (with-timeout {:timeout-ms 5000
                                 :on-success "string instead of function"
-                                :unknown-key 1}
-                   )))
+                                :unknown-key 1})))
     (is (thrown? ExceptionInfo
                  (with-timeout {:timeout-ms 5000
                                 :on-failure "string instead of function"
-                                :unknown-key 1}
-                   )))))
+                                :unknown-key 1})))))

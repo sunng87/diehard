@@ -97,7 +97,7 @@
   [opts]
   (if-let [rate (:rate opts)]
     (let [max-cached-tokens (:max-cached-tokens opts rate)]
-        (TokenBucketRateLimiter. (/ (double rate) 1000) max-cached-tokens
-                                 (atom {:reserved-tokens (double 0)
-                                        :last-refill-ts (long -1)})))
+      (TokenBucketRateLimiter. (/ (double rate) 1000) max-cached-tokens
+                               (atom {:reserved-tokens (double 0)
+                                      :last-refill-ts (long -1)})))
     (throw (IllegalArgumentException. ":rate is required for rate-limiter"))))

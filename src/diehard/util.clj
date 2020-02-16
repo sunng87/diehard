@@ -1,7 +1,7 @@
 (ns ^:no-doc diehard.util
-  (:require[clojure.spec.alpha :as s])
+  (:require [clojure.spec.alpha :as s])
   (:import [net.jodah.failsafe.function CheckedRunnable CheckedConsumer
-                                        CheckedFunction CheckedSupplier]
+            CheckedFunction CheckedSupplier]
            [java.util.function Predicate BiPredicate]))
 
 (defn verify-opt-map-keys [opt-map allowed-keys]

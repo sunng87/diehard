@@ -9,8 +9,8 @@
            [java.time.temporal ChronoUnit]
            [java.util List]
            [java.util.function BiPredicate Predicate]
-           [net.jodah.failsafe Failsafe FailurePolicy Fallback RetryPolicy FailsafeExecutor
-            ExecutionContext FailsafeException Timeout
+           [net.jodah.failsafe Failsafe Fallback RetryPolicy FailsafeExecutor
+            ExecutionContext FailsafeException
             CircuitBreakerOpenException]
            [net.jodah.failsafe.event ExecutionAttemptedEvent
             ExecutionCompletedEvent]

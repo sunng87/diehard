@@ -1,7 +1,7 @@
 (ns diehard.timeout
   (:require [diehard.util :as util])
   (:import [java.time Duration]
-           [net.jodah.failsafe Timeout Failsafe Policy]))
+           [net.jodah.failsafe Timeout]))
 
 (defn timeout-policy-from-config-map [opts]
   (util/verify-opt-map-keys-with-spec :timeout/timeout-new opts)

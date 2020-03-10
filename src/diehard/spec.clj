@@ -14,8 +14,8 @@
                                     (map (comp keyword name) opt-un)))
                       any?)))
 
-(def is-exception-class?
-  #(isa? % Exception))
+(def is-throwable-class?
+  #(isa? % Throwable))
 
 ;; retry policy
 
@@ -24,14 +24,14 @@
 
 (s/def :retry/retry-if fn?)
 (s/def :retry/retry-on
-  (s/or :single is-exception-class?
-        :multi (s/coll-of is-exception-class?)))
+  (s/or :single is-throwable-class?
+        :multi (s/coll-of is-throwable-class?)))
 (s/def :retry/retry-when any?)
 
 (s/def :retry/abort-if fn?)
 (s/def :retry/abort-on
-  (s/or :single is-exception-class?
-        :multi (s/coll-of is-exception-class?)))
+  (s/or :single is-throwable-class?
+        :multi (s/coll-of is-throwable-class?)))
 (s/def :retry/abort-when any?)
 
 (s/def :retry/backoff-ms
@@ -84,8 +84,8 @@
 
 (s/def :circuit-breaker/fail-if fn?)
 (s/def :circuit-breaker/fail-on
-  (s/or :single is-exception-class?
-        :multi (s/coll-of is-exception-class?)))
+  (s/or :single is-throwable-class?
+        :multi (s/coll-of is-throwable-class?)))
 (s/def :circuit-breaker/fail-when any?)
 
 (s/def :circuit-breaker/failure-threshold int?)

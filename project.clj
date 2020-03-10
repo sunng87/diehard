@@ -7,7 +7,7 @@
                  [net.jodah/failsafe "2.3.1"]
                  [org.clojure/spec.alpha "0.2.176"]]
   :plugins [[lein-codox "0.10.7"]
-            [lein-eftest "0.5.2"]]
+            [lein-eftest "0.5.9"]]
   :codox {:output-path "docs/"
           :source-uri "https://github.com/sunng87/diehard/blob/master/{filepath}#L{line}"
           :metadata {:doc/format :markdown}}

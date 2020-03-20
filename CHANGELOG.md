@@ -1,5 +1,11 @@
 # Change Log
 
+## [0.9.3] - 2020-03-20
+
+### Changed
+
+- Allow catching `Throwable` in retry block [#36]
+
 ## [0.9.2] - 2020-01-29
 
 ### Added

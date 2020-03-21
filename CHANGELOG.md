@@ -1,5 +1,11 @@
 # Change Log
 
+## [0.9.4] - 2020-03-21
+
+### Fixed
+
+- Fixed regression issue `:retry/retry-policy-new` not found [#37]
+
 ## [0.9.3] - 2020-03-20
 
 ### Changed

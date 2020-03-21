@@ -1,5 +1,6 @@
 (ns diehard.core
   (:require [clojure.set :as set]
+            [diehard.spec :refer :all]
             [diehard.util :as u]
             [diehard.circuit-breaker :as cb]
             [diehard.rate-limiter :as rl]

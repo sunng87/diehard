@@ -579,7 +579,7 @@ Available options:
 * `timeout-ms`: required timeout
 * `on-success`: the callback when block execution succeeded
 * `on-failure`: the failure when block execution timed out
-* `interrupt?`: cancel execution if it times out
+* `interrupt?`: cancel the execution if it times out. boolean, default false
 "}
   with-timeout [opts & body]
   `(let [opts# ~opts

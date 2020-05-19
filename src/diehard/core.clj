@@ -575,10 +575,11 @@ when `max-wait-ms` exceeded, an `ex-info` will be thrown with `ex-data` as `{:bu
   ^{:doc "Timeout block. This block will throw TimeoutExceededException when
 configured time elapsed.
 
-Available optios:
+Available options:
 * `timeout-ms`: required timeout
 * `on-success`: the callback when block execution succeeded
 * `on-failure`: the failure when block execution timed out
+* `interrupt?`: cancel execution if it times out
 "}
   with-timeout [opts & body]
   `(let [opts# ~opts

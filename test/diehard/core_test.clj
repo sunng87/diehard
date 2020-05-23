@@ -3,7 +3,6 @@
             [diehard.circuit-breaker :as cb]
             [diehard.core :refer :all])
   (:import [net.jodah.failsafe CircuitBreakerOpenException]
-           [net.jodah.failsafe.util Ratio]
            [java.util.concurrent CountDownLatch]))
 
 (deftest test-retry
@@ -215,19 +214,16 @@
 (deftest test-circuit-breaker-params
   (testing "failure threshold ratio"
     (defcircuitbreaker test-cb-p1 {:failure-threshold-ratio [7 10]})
-    (is (= (Ratio. 7 10) (.getFailureThreshold test-cb-p1))))
+    (is (= 7 (.getFailureThreshold test-cb-p1))))
   (testing "failure threshold"
     (defcircuitbreaker test-cb-p2 {:failure-threshold 7})
-    (is (= 7 (.getNumerator (.getFailureThreshold test-cb-p2)))))
+    (is (= 7 (.getFailureThreshold test-cb-p2))))
   (testing "success threshold ratio"
     (defcircuitbreaker test-cb-p3 {:success-threshold-ratio [10 10]})
-    (is (= (Ratio. 10 10) (.getSuccessThreshold test-cb-p3))))
+    (is (= 10 (.getSuccessThreshold test-cb-p3))))
   (testing "success threshold"
     (defcircuitbreaker test-cb-p4 {:success-threshold 10})
-    (is (= 10 (.getNumerator (.getSuccessThreshold test-cb-p4)))))
-  (testing "timeout"
-    (defcircuitbreaker test-cb-p5 {:timeout-ms 1})
-    (is (= 1000000 (.getNano (.getTimeout test-cb-p5))))))
+    (is (= 10 (.getSuccessThreshold test-cb-p4)))))
 
 (deftest test-retry-policy-params
   (testing "retry policy param"

@@ -24,8 +24,6 @@
       (.handleIf cb ^BiPredicate (u/bipredicate (:fail-if opts))))
     (when (contains? opts :fail-when)
       (.handleResult cb (:fail-when opts)))
-    (when-let [timeout (:timeout-ms opts)]
-      (.withTimeout cb (Duration/ofMillis timeout)))
 
     (when-let [delay (:delay-ms opts)]
       (.withDelay cb (Duration/ofMillis delay)))

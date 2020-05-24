@@ -32,7 +32,11 @@
       (.withFailureThreshold cb failure-threshold))
 
     (when-let [[failures executions] (:failure-threshold-ratio opts)]
-      (.withFailureThreshold cb failures executions))
+      (.withFailureThreshold cb failures))
+
+    (when-let [[failures executions ^Duration period]
+               (:failure-threshold-ratio-in-period opts)]
+      (.withFailureThreshold cb failures executions ^Duration period))
 
     (when-let [success-threshold (:success-threshold opts)]
       (.withSuccessThreshold cb success-threshold))

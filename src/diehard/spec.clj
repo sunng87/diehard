@@ -90,6 +90,7 @@
 
 (s/def :circuit-breaker/failure-threshold int?)
 (s/def :circuit-breaker/failure-threshold-ratio (s/tuple int? int?))
+(s/def :circuit-breaker/failure-threshold-ratio-in-period (s/tuple int? int? int?))
 (s/def :circuit-breaker/success-threshold int?)
 (s/def :circuit-breaker/success-threshold-ratio (s/tuple int? int?))
 
@@ -110,6 +111,7 @@
 
                       :circuit-breaker/failure-threshold
                       :circuit-breaker/failure-threshold-ratio
+                      :circuit-breaker/failure-threshold-ratio-in-period
                       :circuit-breaker/success-threshold
                       :circuit-breaker/success-threshold-ratio
 

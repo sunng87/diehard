@@ -390,8 +390,9 @@ retry block.
   into `:half-open`.
 * `:failure-threshold`
 * `:failure-threshold-ratio`
+* `:failure-threshold-ratio-in-period`
 * `:success-threshold`
-* `:success-threshold-ratio` All these four option is to determine at
+* `:success-threshold-ratio` All these options are to determine at
   what condition the circuit breaker is open.
 
 ##### Listeners

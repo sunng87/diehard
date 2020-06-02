@@ -248,7 +248,17 @@
         (catch Exception e
           (if (< n 2)
             (is (instance? IllegalStateException e))
-            (is (instance? CircuitBreakerOpenException e))))))))
+            (is (instance? CircuitBreakerOpenException e)))))))
+  (testing "failure threshold ratio for period"
+    (defcircuitbreaker test-cb-2 {:failure-threshold-ratio-in-period [1 2 10]})
+
+    (dotimes [_ 4]
+      (try
+        (with-circuit-breaker test-cb-2
+          (Thread/sleep 15)
+          (throw (Exception. "expected")))
+        (catch Exception e
+          (is (not (instance? CircuitBreakerOpenException e))))))))
 
 (deftest opt-eval-count
   (let [eval-counter (atom 0)]

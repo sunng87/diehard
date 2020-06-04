@@ -3,7 +3,6 @@
             [diehard.circuit-breaker :as cb]
             [diehard.core :refer :all])
   (:import [net.jodah.failsafe CircuitBreakerOpenException]
-           [net.jodah.failsafe.util Ratio]
            [java.util.concurrent CountDownLatch]))
 
 (deftest test-retry
@@ -215,19 +214,16 @@
 (deftest test-circuit-breaker-params
   (testing "failure threshold ratio"
     (defcircuitbreaker test-cb-p1 {:failure-threshold-ratio [7 10]})
-    (is (= (Ratio. 7 10) (.getFailureThreshold test-cb-p1))))
+    (is (= 7 (.getFailureThreshold test-cb-p1))))
   (testing "failure threshold"
     (defcircuitbreaker test-cb-p2 {:failure-threshold 7})
-    (is (= 7 (.getNumerator (.getFailureThreshold test-cb-p2)))))
+    (is (= 7 (.getFailureThreshold test-cb-p2))))
   (testing "success threshold ratio"
     (defcircuitbreaker test-cb-p3 {:success-threshold-ratio [10 10]})
-    (is (= (Ratio. 10 10) (.getSuccessThreshold test-cb-p3))))
+    (is (= 10 (.getSuccessThreshold test-cb-p3))))
   (testing "success threshold"
     (defcircuitbreaker test-cb-p4 {:success-threshold 10})
-    (is (= 10 (.getNumerator (.getSuccessThreshold test-cb-p4)))))
-  (testing "timeout"
-    (defcircuitbreaker test-cb-p5 {:timeout-ms 1})
-    (is (= 1000000 (.getNano (.getTimeout test-cb-p5))))))
+    (is (= 10 (.getSuccessThreshold test-cb-p4)))))
 
 (deftest test-retry-policy-params
   (testing "retry policy param"
@@ -252,7 +248,17 @@
         (catch Exception e
           (if (< n 2)
             (is (instance? IllegalStateException e))
-            (is (instance? CircuitBreakerOpenException e))))))))
+            (is (instance? CircuitBreakerOpenException e)))))))
+  (testing "failure threshold ratio for period"
+    (defcircuitbreaker test-cb-2 {:failure-threshold-ratio-in-period [1 2 10]})
+
+    (dotimes [_ 4]
+      (try
+        (with-circuit-breaker test-cb-2
+          (Thread/sleep 15)
+          (throw (Exception. "expected")))
+        (catch Exception e
+          (is (not (instance? CircuitBreakerOpenException e))))))))
 
 (deftest opt-eval-count
   (let [eval-counter (atom 0)]

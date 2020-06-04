@@ -7,7 +7,7 @@
 
 (def ^{:const true :no-doc true}
   allowed-circuit-breaker-option-keys
-  #{:failure-threshold :failure-threshold-ratio
+  #{:failure-threshold :failure-threshold-ratio :failure-threshold-ratio-in-period
     :success-threshold :success-threshold-ratio
     :delay-ms :timeout-ms
 
@@ -24,8 +24,6 @@
       (.handleIf cb ^BiPredicate (u/bipredicate (:fail-if opts))))
     (when (contains? opts :fail-when)
       (.handleResult cb (:fail-when opts)))
-    (when-let [timeout (:timeout-ms opts)]
-      (.withTimeout cb (Duration/ofMillis timeout)))
 
     (when-let [delay (:delay-ms opts)]
       (.withDelay cb (Duration/ofMillis delay)))
@@ -34,7 +32,11 @@
       (.withFailureThreshold cb failure-threshold))
 
     (when-let [[failures executions] (:failure-threshold-ratio opts)]
-      (.withFailureThreshold cb failures executions))
+      (.withFailureThreshold cb failures))
+
+    (when-let [[failures executions period-ms]
+               (:failure-threshold-ratio-in-period opts)]
+      (.withFailureThreshold cb failures executions (Duration/ofMillis period-ms)))
 
     (when-let [success-threshold (:success-threshold opts)]
       (.withSuccessThreshold cb success-threshold))

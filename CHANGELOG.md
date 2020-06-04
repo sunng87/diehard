@@ -1,5 +1,15 @@
 # Change Log
 
+## [0.10.0] - 2020-06-04
+
+### Added
+
+- `:failure-threshold-ratio-in-period` option for circuit breaker
+
+### Changed
+
+- Update failsafe to 2.4.0
+
 ## [0.9.4] - 2020-03-21
 
 ### Fixed

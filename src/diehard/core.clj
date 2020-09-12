@@ -298,18 +298,6 @@ And use `:policy` option in option map.
 * `:on-retry` accepts a function which takes `result` as arguments,
   called when a retry attempted.
 
-##### Use predefined listeners
-
-```clojure
-(diehard/deflistener listener
-  {:on-retry (fn [return-value exception-thrown] (println \"retried\"))})
-
-(diehard/with-retry {:policy policy :listener listener}
-  ;; your code here
-  )
-
-```
-
 ##### Fallback
 
 * `:fallback` fallback value or handler function when retry blocks

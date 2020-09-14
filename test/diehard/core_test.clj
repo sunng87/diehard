@@ -201,6 +201,14 @@
 
     (is (= 10 (with-retry {:policy the-test-policy} *executions*))))
 
+  (testing "predefined policy with customization"
+    (defretrypolicy the-test-policy
+      {:retry-if (fn [v e] (< v 10))})
+
+    (is (= 4 (with-retry {:policy the-test-policy
+                          :max-retries 4}
+                *executions*))))
+
   (testing "RuntimeException"
     (let [retries (atom 0)]
       (try

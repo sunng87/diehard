@@ -27,8 +27,7 @@
                         :jitter-factor :jitter-ms})
 
 (def ^:const ^:no-doc listener-allowed-keys
-  #{:listener
-    :on-abort :on-complete :on-failed-attempt
+  #{:on-abort :on-complete :on-failed-attempt
     :on-failure :on-retry :on-retries-exceeded :on-success})
 
 (def ^:const ^:no-doc allowed-keys
@@ -51,86 +50,85 @@
      ~@body))
 
 (defn ^:no-doc retry-policy-from-config [policy-map]
-  (if-let [policy (:policy policy-map)]
+  (let [policy (if-let [policy (:policy policy-map)]
+                 (.copy ^RetryPolicy policy)
+                 (RetryPolicy.))]
 
-    (.copy ^RetryPolicy policy)
+    (when (contains? policy-map :abort-if)
+      (.abortIf policy ^BiPredicate (u/bipredicate (:abort-if policy-map))))
+    (when (contains? policy-map :abort-on)
+      (.abortOn policy ^Predicate (u/predicate-or-value (:abort-on policy-map))))
+    (when (contains? policy-map :abort-when)
+      (.abortWhen policy (:abort-when policy-map)))
+    (when (contains? policy-map :retry-if)
+      (.handleIf policy ^BiPredicate (u/bipredicate (:retry-if policy-map))))
+    (when (contains? policy-map :retry-on)
+      (.handle policy ^List (u/as-vector (:retry-on policy-map))))
+    (when (contains? policy-map :retry-when)
+      (if (fn? (:retry-when policy-map))
+        (.handleResultIf policy (u/predicate (:retry-when policy-map)))
+        (.handleResult policy (:retry-when policy-map))))
+    (when (contains? policy-map :backoff-ms)
+      (let [backoff-config (:backoff-ms policy-map)
+            [delay max-delay multiplier] backoff-config]
+        (if (nil? multiplier)
+          (.withBackoff policy delay max-delay ChronoUnit/MILLIS)
+          (.withBackoff policy delay max-delay ChronoUnit/MILLIS multiplier))))
+    (when-let [delay  (:delay-ms policy-map)]
+      (.withDelay policy (Duration/ofMillis delay)))
+    (when-let [duration (:max-duration-ms policy-map)]
+      (.withMaxDuration policy (Duration/ofMillis duration)))
+    (when-let [retries (:max-retries policy-map -1)]
+      (.withMaxRetries policy retries))
+    (when-let [jitter (:jitter-factor policy-map)]
+      (.withJitter policy ^double jitter))
+    (when-let [jitter (:jitter-ms policy-map)]
+      (.withJitter policy (Duration/ofMillis jitter)))
 
-    (let [policy (RetryPolicy.)]
-      (when (contains? policy-map :abort-if)
-        (.abortIf policy ^BiPredicate (u/bipredicate (:abort-if policy-map))))
-      (when (contains? policy-map :abort-on)
-        (.abortOn policy ^Predicate (u/predicate-or-value (:abort-on policy-map))))
-      (when (contains? policy-map :abort-when)
-        (.abortWhen policy (:abort-when policy-map)))
-      (when (contains? policy-map :retry-if)
-        (.handleIf policy ^BiPredicate (u/bipredicate (:retry-if policy-map))))
-      (when (contains? policy-map :retry-on)
-        (.handle policy ^List (u/as-vector (:retry-on policy-map))))
-      (when (contains? policy-map :retry-when)
-        (if (fn? (:retry-when policy-map))
-          (.handleResultIf policy (u/predicate (:retry-when policy-map)))
-          (.handleResult policy (:retry-when policy-map))))
-      (when (contains? policy-map :backoff-ms)
-        (let [backoff-config (:backoff-ms policy-map)
-              [delay max-delay multiplier] backoff-config]
-          (if (nil? multiplier)
-            (.withBackoff policy delay max-delay ChronoUnit/MILLIS)
-            (.withBackoff policy delay max-delay ChronoUnit/MILLIS multiplier))))
-      (when-let [delay  (:delay-ms policy-map)]
-        (.withDelay policy (Duration/ofMillis delay)))
-      (when-let [duration (:max-duration-ms policy-map)]
-        (.withMaxDuration policy (Duration/ofMillis duration)))
-      (when-let [retries (:max-retries policy-map -1)]
-        (.withMaxRetries policy retries))
-      (when-let [jitter (:jitter-factor policy-map)]
-        (.withJitter policy ^double jitter))
-      (when-let [jitter (:jitter-ms policy-map)]
-        (.withJitter policy (Duration/ofMillis jitter)))
-
-      ;; events
-      (when-let [on-abort (:on-abort policy-map)]
-        (.onAbort policy
+    ;; events
+    (when-let [on-abort (:on-abort policy-map)]
+      (.onAbort policy
+                (u/fn-as-consumer
+                 (fn [^ExecutionCompletedEvent event]
+                   (with-context event
+                     (on-abort (.getResult event) (.getFailure event)))))))
+    (when-let [on-failed-attempt (:on-failed-attempt policy-map)]
+      (.onFailedAttempt policy
+                        (u/fn-as-consumer
+                         (fn [^ExecutionAttemptedEvent event]
+                           (with-context event
+                             (on-failed-attempt (.getLastResult event)
+                                                (.getLastFailure event)))))))
+    (when-let [on-failure (:on-failure policy-map)]
+      (.onFailure policy
                   (u/fn-as-consumer
                    (fn [^ExecutionCompletedEvent event]
                      (with-context event
-                       (on-abort (.getResult event) (.getFailure event)))))))
-      (when-let [on-failed-attempt (:on-failed-attempt policy-map)]
-        (.onFailedAttempt policy
+                       (on-failure (.getResult event) (.getFailure event)))))))
+
+    (when-let [on-retry (:on-retry policy-map)]
+      (.onRetry policy
+                (u/fn-as-consumer
+                 (fn [^ExecutionAttemptedEvent event]
+                   (with-context event
+                     (on-retry (.getLastResult event)
+                               (.getLastFailure event)))))))
+
+    (when-let [on-retries-exceeded (:on-retries-exceeded policy-map)]
+      (.onRetriesExceeded policy
                           (u/fn-as-consumer
-                           (fn [^ExecutionAttemptedEvent event]
+                           (fn [^ExecutionCompletedEvent event]
                              (with-context event
-                               (on-failed-attempt (.getLastResult event)
-                                                  (.getLastFailure event)))))))
-      (when-let [on-failure (:on-failure policy-map)]
-        (.onFailure policy
-                    (u/fn-as-consumer
-                     (fn [^ExecutionCompletedEvent event]
-                       (with-context event
-                         (on-failure (.getResult event) (.getFailure event)))))))
+                               (on-retries-exceeded (.getResult event) (.getFailure event)))))))
 
-      (when-let [on-retry (:on-retry policy-map)]
-        (.onRetry policy
+    (when-let [on-success (:on-success policy-map)]
+      (.onSuccess policy
                   (u/fn-as-consumer
-                   (fn [^ExecutionAttemptedEvent event]
+                   (fn [^ExecutionCompletedEvent event]
                      (with-context event
-                       (on-retry (.getLastResult event)
-                                 (.getLastFailure event)))))))
+                       (on-success (.getResult event)))))))
 
-      (when-let [on-retries-exceeded (:on-retries-exceeded policy-map)]
-        (.onRetriesExceeded policy
-                            (u/fn-as-consumer
-                             (fn [^ExecutionCompletedEvent event]
-                               (with-context event
-                                 (on-retries-exceeded (.getResult event) (.getFailure event)))))))
-
-      (when-let [on-success (:on-success policy-map)]
-        (.onSuccess policy
-                    (u/fn-as-consumer
-                     (fn [^ExecutionCompletedEvent event]
-                       (with-context event
-                         (on-success (.getResult event)))))))
-
-      policy)))
+    policy))
 
 (defn ^:no-doc fallback [opts]
   (when-some [fb (:fallback opts)]

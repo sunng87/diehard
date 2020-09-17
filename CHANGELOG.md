@@ -1,5 +1,15 @@
 # Change Log
 
+## [0.10.1] - 2020-09-17
+
+### Changed
+
+- Allow customization with predefined policy
+
+### Fixed
+
+- Removed obsolete docs about deflistener
+
 ## [0.10.0] - 2020-06-04
 
 ### Added

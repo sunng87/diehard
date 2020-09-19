@@ -78,7 +78,7 @@
       (.withDelay policy (Duration/ofMillis delay)))
     (when-let [duration (:max-duration-ms policy-map)]
       (.withMaxDuration policy (Duration/ofMillis duration)))
-    (when-let [retries (:max-retries policy-map -1)]
+    (when-let [retries (:max-retries policy-map)]
       (.withMaxRetries policy retries))
     (when-let [jitter (:jitter-factor policy-map)]
       (.withJitter policy ^double jitter))

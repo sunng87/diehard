@@ -1,5 +1,11 @@
 # Change Log
 
+## [0.10.2] - 2020-09-20
+
+### Fixed
+
+- Default value of `:max-retries` is now removed. [#43]
+
 ## [0.10.1] - 2020-09-17
 
 ### Changed

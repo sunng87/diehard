@@ -78,8 +78,13 @@
       (.withDelay policy (Duration/ofMillis delay)))
     (when-let [duration (:max-duration-ms policy-map)]
       (.withMaxDuration policy (Duration/ofMillis duration)))
-    (when-let [retries (:max-retries policy-map)]
-      (.withMaxRetries policy retries))
+    (if-let [retries (:max-retries policy-map)]
+      (.withMaxRetries policy retries)
+      ;; for 0.10.x compatibility:
+      ;; if neither :max-retries or :policy is given,
+      ;; use -1 as default
+      (when-not (some? (:policy policy-map))
+        (.withMaxRetries policy -1)))
     (when-let [jitter (:jitter-factor policy-map)]
       (.withJitter policy ^double jitter))
     (when-let [jitter (:jitter-ms policy-map)]

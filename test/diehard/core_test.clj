@@ -207,7 +207,12 @@
 
     (is (= 4 (with-retry {:policy the-test-policy
                           :max-retries 4}
-                *executions*))))
+               *executions*))))
+
+  (testing "issue #43"
+    (defretrypolicy policy-43 {:max-retries 2
+                               :retry-if (fn [v _] (< v 10))})
+    (is (= 2 (with-retry {:policy policy-43} *executions*))))
 
   (testing "RuntimeException"
     (let [retries (atom 0)]

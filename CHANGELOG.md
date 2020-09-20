@@ -4,7 +4,7 @@
 
 ### Fixed
 
-- Default value of `:max-retries` is now removed. [#43]
+- Fixed issue that max-retries was set to -1 when using predefine policy [#43]
 
 ## [0.10.1] - 2020-09-17
 

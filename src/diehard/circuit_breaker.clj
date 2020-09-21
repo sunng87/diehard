@@ -8,6 +8,7 @@
 (def ^{:const true :no-doc true}
   allowed-circuit-breaker-option-keys
   #{:failure-threshold :failure-threshold-ratio :failure-threshold-ratio-in-period
+    :failure-rate-threshold-in-period
     :success-threshold :success-threshold-ratio
     :delay-ms :timeout-ms
 
@@ -37,6 +38,10 @@
     (when-let [[failures executions period-ms]
                (:failure-threshold-ratio-in-period opts)]
       (.withFailureThreshold cb failures executions (Duration/ofMillis period-ms)))
+
+    (when-let [[failure-rate executions period-ms]
+               (:failure-rate-threshold-in-period opts)]
+      (.withFailureRateThreshold cb failure-rate executions (Duration/ofMillis period-ms)))
 
     (when-let [success-threshold (:success-threshold opts)]
       (.withSuccessThreshold cb success-threshold))

@@ -236,7 +236,12 @@
     (is (= 10 (.getSuccessThreshold test-cb-p3))))
   (testing "success threshold"
     (defcircuitbreaker test-cb-p4 {:success-threshold 10})
-    (is (= 10 (.getSuccessThreshold test-cb-p4)))))
+    (is (= 10 (.getSuccessThreshold test-cb-p4))))
+  (testing "failure rate threshold"
+    (defcircuitbreaker test-cb-p5 {:failure-rate-threshold-in-period [5 30 1000]})
+    (is (= 5 (.getFailureRateThreshold test-cb-p5)))
+    (is (= 30 (.getFailureExecutionThreshold test-cb-p5)))
+    (is (= 1000 (.toMillis (.getFailureThresholdingPeriod test-cb-p5))))))
 
 (deftest test-retry-policy-params
   (testing "retry policy param"

@@ -382,6 +382,7 @@ retry block.
 * `:failure-threshold`
 * `:failure-threshold-ratio`
 * `:failure-threshold-ratio-in-period`
+* `:failure-rate-threshold-in-period`
 * `:success-threshold`
 * `:success-threshold-ratio` All these options are to determine at
   what condition the circuit breaker is open.

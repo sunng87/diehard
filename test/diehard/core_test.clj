@@ -292,7 +292,38 @@
                (catch CircuitBreakerOpenException _
                  :skipped)
                (catch IllegalStateException _
-                 :failure)))))))
+                 :failure))))))
+
+  (testing "failure rate threshold"
+    (defcircuitbreaker test-cb-4 {:failure-rate-threshold-in-period [75 5 50]})
+    ;; fail 100% of the time, but less than 5 executions, so remains closed
+    (is (= [:failure :failure :failure :failure]
+           (for [_ (range 4)]
+             (try
+               (with-circuit-breaker test-cb-4
+                 (throw (IllegalStateException.)))
+               :success
+               (catch CircuitBreakerOpenException _
+                 :skipped)
+               (catch IllegalStateException _
+                 :failure)))))
+    (is (= :closed (cb/state test-cb-4)))
+    ;; reset the timer
+    (Thread/sleep 60)
+    ;; fail > 75% of the time, more than 5 executions opens the circuit
+    (is (= [:failure :success :failure :failure :failure
+            :skipped :skipped :skipped :skipped :skipped]
+           (for [i (range 10)]
+             (try
+               (with-circuit-breaker test-cb-4
+                 (when-not (= 1 i)
+                   (throw (IllegalStateException.))))
+               :success
+               (catch CircuitBreakerOpenException _
+                 :skipped)
+               (catch IllegalStateException _
+                 :failure)))))
+    (is (= :open (cb/state test-cb-4)))))
 
 (deftest opt-eval-count
   (let [eval-counter (atom 0)]

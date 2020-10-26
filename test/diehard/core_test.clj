@@ -276,7 +276,23 @@
           (Thread/sleep 15)
           (throw (Exception. "expected")))
         (catch Exception e
-          (is (not (instance? CircuitBreakerOpenException e))))))))
+          (is (not (instance? CircuitBreakerOpenException e)))))))
+
+  (testing "failure threshold ratio"
+    (defcircuitbreaker test-cb-3 {:failure-threshold-ratio [3 4]})
+
+    (is (= [:failure :success :failure :success :failure :failure
+            :skipped :skipped :skipped :skipped]
+           (for [i (range 10)]
+             (try
+               (with-circuit-breaker test-cb-3
+                 (when (#{0 2 4 5 6} i)
+                   (throw (IllegalStateException.))))
+               :success
+               (catch CircuitBreakerOpenException _
+                 :skipped)
+               (catch IllegalStateException _
+                 :failure)))))))
 
 (deftest opt-eval-count
   (let [eval-counter (atom 0)]

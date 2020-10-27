@@ -379,12 +379,24 @@ retry block.
 
 * `:delay-ms` required. the delay for `:open` circuit breaker to turn
   into `:half-open`.
-* `:failure-threshold`
-* `:failure-threshold-ratio`
-* `:failure-threshold-ratio-in-period`
-* `:success-threshold`
-* `:success-threshold-ratio` All these options are to determine at
-  what condition the circuit breaker is open.
+* `:failure-threshold failures` sets the number of failures that must occur
+  before the circuit opens (count-based).
+* `:failure-threshold-ratio [failures executions]` sets the failure ratio that
+  must occur before the circuit opens (count-based). e.g. [4 10] means 4 out of
+  the last 10 executions must fail to open the circuit.
+* `:failure-threshold-ratio-in-period [failures min-executions period-ms]` sets
+  the number of failures that must occur within a time period to open the
+  circuit (time-based). Must also exceed `min-executions` within the time
+  period to open the circuit.
+* `:failure-rate-threshold-in-period [failure-pct min-executions period-ms]`
+  sets the percent of executions that must fail (1-100) within the time period
+  to open the circuit (time-based). Must also exceed `min-executions` within
+  the time period to open the circuit.
+* `:success-threshold successes` sets the number of successful executions that
+  must occur when in `:half-open` to return to a `:closed` state.
+* `:success-threshold-ratio [successes executions]` sets the success ratio that
+  must occur when in `:half-open` to return to a `:closed` state. e.g. [6 10]
+  means 6 out of the last 10 executions must succeed to close the circuit.
 
 ##### Listeners
 

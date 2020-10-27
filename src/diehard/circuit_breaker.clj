@@ -32,8 +32,8 @@
     (when-let [failure-threshold (:failure-threshold opts)]
       (.withFailureThreshold cb failure-threshold))
 
-    (when-let [[failures executions] (:failure-threshold-ratio opts)]
-      (.withFailureThreshold cb failures))
+    (when-let [[^int failures ^int executions] (:failure-threshold-ratio opts)]
+      (.withFailureThreshold cb failures executions))
 
     (when-let [[failures executions period-ms]
                (:failure-threshold-ratio-in-period opts)]

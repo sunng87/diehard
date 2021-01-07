@@ -5,7 +5,7 @@
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [[org.clojure/clojure "1.10.1"]
                  [net.jodah/failsafe "2.4.0"]
-                 [org.clojure/spec.alpha "0.2.187"]]
+                 [org.clojure/spec.alpha "0.2.194"]]
   :plugins [[lein-codox "0.10.7"]
             [lein-eftest "0.5.9"]]
   :codox {:output-path "docs/"

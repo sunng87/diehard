@@ -346,7 +346,7 @@ It will work together with retry policy as quit criteria.
                                                        (.getFailure event#))))))
                        failsafe#)
            callable# (reify ContextualSupplier
-                       (get [_ ^ExecutionContext ctx#]
+                       (get [_# ^ExecutionContext ctx#]
                          (with-context ctx#
                            ~@body)))]
        (try
@@ -456,7 +456,7 @@ You can always check circuit breaker state with
                      failsafe#)
 
          supplier# (reify CheckedSupplier
-                     (get [_]
+                     (get [_#]
                        ~@body))]
      (try
        (.get ^FailsafeExecutor failsafe# ^CheckedSupplier supplier#)
@@ -594,5 +594,5 @@ Available options:
          policies# (vector policy#)
          failsafe# (Failsafe/with ^List policies#)]
      (.get failsafe# (reify CheckedSupplier
-                       (get [_]
+                       (get [_#]
                          ~@body)))))

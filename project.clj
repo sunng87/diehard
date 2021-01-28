@@ -3,7 +3,7 @@
   :url "http://github.com/sunng87/diehard"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
-  :dependencies [[org.clojure/clojure "1.10.1"]
+  :dependencies [[org.clojure/clojure "1.10.2"]
                  [net.jodah/failsafe "2.4.0"]
                  [org.clojure/spec.alpha "0.2.194"]]
   :plugins [[lein-codox "0.10.7"]

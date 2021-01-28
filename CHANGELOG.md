@@ -1,5 +1,11 @@
 # Change Log
 
+## [0.10.3] - 2021-01-28
+
+### Fixed
+
+- Fixed gensym for arguments [#46]
+
 ## [0.10.2] - 2020-09-20
 
 ### Fixed

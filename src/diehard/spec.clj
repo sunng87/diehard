@@ -2,7 +2,7 @@
   (:require [clojure.spec.alpha :as s]
             [diehard.rate-limiter :as dr]
             [diehard.bulkhead :as db])
-  (:import [net.jodah.failsafe RetryPolicy CircuitBreaker]))
+  (:import [dev.failsafe RetryPolicy CircuitBreaker]))
 
 ;; copied from https://groups.google.com/forum/#!topic/clojure/fti0eJdPQJ8
 (defmacro only-keys

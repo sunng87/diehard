@@ -2,7 +2,7 @@
   (:require [clojure.test :refer :all]
             [diehard.circuit-breaker :as cb]
             [diehard.core :refer :all])
-  (:import [net.jodah.failsafe CircuitBreakerOpenException]
+  (:import [dev.failsafe CircuitBreakerOpenException]
            [java.util.concurrent CountDownLatch]))
 
 (deftest test-retry
@@ -227,21 +227,21 @@
 (deftest test-circuit-breaker-params
   (testing "failure threshold ratio"
     (defcircuitbreaker test-cb-p1 {:failure-threshold-ratio [7 10]})
-    (is (= 7 (.getFailureThreshold test-cb-p1))))
+    (is (= 7 (.. test-cb-p1 (getConfig) (getFailureThreshold)))))
   (testing "failure threshold"
     (defcircuitbreaker test-cb-p2 {:failure-threshold 7})
-    (is (= 7 (.getFailureThreshold test-cb-p2))))
+    (is (= 7 (.. test-cb-p2 (getConfig) (getFailureThreshold)))))
   (testing "success threshold ratio"
     (defcircuitbreaker test-cb-p3 {:success-threshold-ratio [10 10]})
-    (is (= 10 (.getSuccessThreshold test-cb-p3))))
+    (is (= 10 (.. test-cb-p3 (getConfig) (getSuccessThreshold)))))
   (testing "success threshold"
     (defcircuitbreaker test-cb-p4 {:success-threshold 10})
-    (is (= 10 (.getSuccessThreshold test-cb-p4))))
+    (is (= 10 (.. test-cb-p4 (getConfig) (getSuccessThreshold)))))
   (testing "failure rate threshold"
     (defcircuitbreaker test-cb-p5 {:failure-rate-threshold-in-period [5 30 1000]})
-    (is (= 5 (.getFailureRateThreshold test-cb-p5)))
-    (is (= 30 (.getFailureExecutionThreshold test-cb-p5)))
-    (is (= 1000 (.toMillis (.getFailureThresholdingPeriod test-cb-p5))))))
+    (is (= 5 (.. test-cb-p5 (getConfig) (getFailureRateThreshold))))
+    (is (= 30 (.. test-cb-p5 (getConfig) (getFailureExecutionThreshold))))
+    (is (= 1000 (.. test-cb-p5 (getConfig) (getFailureThresholdingPeriod) (toMillis))))))
 
 (deftest test-retry-policy-params
   (testing "retry policy param"
@@ -249,10 +249,10 @@
                         :max-duration-ms 2000
                         :jitter-factor 0.5
                         :max-retries 10})
-    (is (= 1000 (.. rp (getDelay) (toMillis))))
-    (is (= 2000 (.. rp (getMaxDuration) (toMillis))))
-    (is (= 0.5 (.. rp (getJitterFactor))))
-    (is (= 10 (.. rp (getMaxRetries))))))
+    (is (= 1000 (.. rp (getConfig) (getDelay) (toMillis))))
+    (is (= 2000 (.. rp (getConfig) (getMaxDuration) (toMillis))))
+    (is (= 0.5 (.. rp (getConfig) (getJitterFactor))))
+    (is (= 10 (.. rp (getConfig) (getMaxRetries))))))
 
 (deftest test-circuit-breaker
   (testing "circuit open"

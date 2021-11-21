@@ -3,7 +3,7 @@
   (:import [java.time Duration]
            [java.util List]
            [java.util.function BiPredicate]
-           [net.jodah.failsafe CircuitBreaker]))
+           [dev.failsafe CircuitBreaker]))
 
 (def ^{:const true :no-doc true}
   allowed-circuit-breaker-option-keys
@@ -18,7 +18,7 @@
 
 (defn circuit-breaker [opts]
   (u/verify-opt-map-keys-with-spec :circuit-breaker/circuit-breaker opts)
-  (let [cb (CircuitBreaker.)]
+  (let [cb (CircuitBreaker/builder)]
     (when (contains? opts :fail-on)
       (.handle cb ^List (u/as-vector (:fail-on opts))))
     (when (contains? opts :fail-if)
@@ -50,14 +50,15 @@
       (.withSuccessThreshold cb successes executions))
 
     (when-let [on-open (:on-open opts)]
-      (.onOpen cb (u/fn-as-runnable on-open)))
+      (.onOpen cb (u/wrap-event-listener on-open)))
 
     (when-let [on-half-open (:on-half-open opts)]
-      (.onHalfOpen cb (u/fn-as-runnable on-half-open)))
+      (.onHalfOpen cb (u/wrap-event-listener on-half-open)))
 
     (when-let [on-close (:on-close opts)]
-      (.onClose cb (u/fn-as-runnable on-close)))
-    cb))
+      (.onClose cb (u/wrap-event-listener on-close)))
+
+    (.build cb)))
 
 (defn state
   "Get current state of this circuit breaker, values in `:open`, `:closed` and `half-open` "

@@ -2,7 +2,7 @@
   (:require [clojure.test :refer :all]
             [diehard.core :refer :all])
   (:import [java.time Duration]
-           [net.jodah.failsafe TimeoutExceededException]
+           [dev.failsafe TimeoutExceededException]
            [java.util.concurrent ExecutionException]
            [clojure.lang ExceptionInfo]))
 

@@ -10,12 +10,12 @@
            [java.time.temporal ChronoUnit]
            [java.util List]
            [java.util.function BiPredicate Predicate]
-           [net.jodah.failsafe Failsafe Fallback RetryPolicy FailsafeExecutor
+           [dev.failsafe Failsafe Fallback RetryPolicy FailsafeExecutor
             ExecutionContext FailsafeException
             CircuitBreakerOpenException]
-           [net.jodah.failsafe.event ExecutionAttemptedEvent
+           [dev.failsafe.event ExecutionAttemptedEvent
             ExecutionCompletedEvent]
-           [net.jodah.failsafe.function CheckedSupplier ContextualSupplier
+           [dev.failsafe.function CheckedSupplier ContextualSupplier
             CheckedFunction]))
 
 (def ^:const ^:no-doc
@@ -51,8 +51,8 @@
 
 (defn ^:no-doc retry-policy-from-config [policy-map]
   (let [policy (if-let [policy (:policy policy-map)]
-                 (.copy ^RetryPolicy policy)
-                 (RetryPolicy.))]
+                 (RetryPolicy/builder (.getConfig policy))
+                 (RetryPolicy/builder))]
 
     (when (contains? policy-map :abort-if)
       (.abortIf policy ^BiPredicate (u/bipredicate (:abort-if policy-map))))
@@ -93,27 +93,27 @@
     ;; events
     (when-let [on-abort (:on-abort policy-map)]
       (.onAbort policy
-                (u/fn-as-consumer
+                (u/wrap-event-listener
                  (fn [^ExecutionCompletedEvent event]
                    (with-context event
                      (on-abort (.getResult event) (.getFailure event)))))))
     (when-let [on-failed-attempt (:on-failed-attempt policy-map)]
       (.onFailedAttempt policy
-                        (u/fn-as-consumer
+                        (u/wrap-event-listener
                          (fn [^ExecutionAttemptedEvent event]
                            (with-context event
                              (on-failed-attempt (.getLastResult event)
                                                 (.getLastFailure event)))))))
     (when-let [on-failure (:on-failure policy-map)]
       (.onFailure policy
-                  (u/fn-as-consumer
+                  (u/wrap-event-listener
                    (fn [^ExecutionCompletedEvent event]
                      (with-context event
                        (on-failure (.getResult event) (.getFailure event)))))))
 
     (when-let [on-retry (:on-retry policy-map)]
       (.onRetry policy
-                (u/fn-as-consumer
+                (u/wrap-event-listener
                  (fn [^ExecutionAttemptedEvent event]
                    (with-context event
                      (on-retry (.getLastResult event)
@@ -121,28 +121,28 @@
 
     (when-let [on-retries-exceeded (:on-retries-exceeded policy-map)]
       (.onRetriesExceeded policy
-                          (u/fn-as-consumer
+                          (u/wrap-event-listener
                            (fn [^ExecutionCompletedEvent event]
                              (with-context event
                                (on-retries-exceeded (.getResult event) (.getFailure event)))))))
 
     (when-let [on-success (:on-success policy-map)]
       (.onSuccess policy
-                  (u/fn-as-consumer
+                  (u/wrap-event-listener
                    (fn [^ExecutionCompletedEvent event]
                      (with-context event
                        (on-success (.getResult event)))))))
 
-    policy))
+    (.build policy)))
 
 (defn ^:no-doc fallback [opts]
   (when-some [fb (:fallback opts)]
-    (Fallback/of ^CheckedFunction
-     (u/fn-as-checked-function
-      (fn [^ExecutionAttemptedEvent exec-event]
-        (let [fb (if-not (fn? fb) (constantly fb) fb)]
-          (with-context exec-event
-            (fb (.getLastResult exec-event) (.getLastFailure exec-event)))))))))
+    (.build (Fallback/builder ^CheckedFunction
+                              (u/fn-as-checked-function
+                               (fn [^ExecutionAttemptedEvent exec-event]
+                                 (let [fb (if-not (fn? fb) (constantly fb) fb)]
+                                   (with-context exec-event
+                                     (fb (.getLastResult exec-event) (.getLastFailure exec-event))))))))))
 
 (defmacro ^{:doc "Predefined retry policy.
 #### Available options
@@ -339,7 +339,7 @@ It will work together with retry policy as quit criteria.
            failsafe# (Failsafe/with ^List policies#)
            failsafe# (if-let [on-complete# (:on-complete the-opt#)]
                        (.onComplete failsafe#
-                                    (u/fn-as-consumer
+                                    (u/wrap-event-listener
                                      (fn [^ExecutionCompletedEvent event#]
                                        (with-context event#
                                          (on-complete# (.getResult event#)

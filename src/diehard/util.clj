@@ -1,7 +1,8 @@
 (ns ^:no-doc diehard.util
   (:require [clojure.spec.alpha :as s])
-  (:import [net.jodah.failsafe.function CheckedRunnable CheckedConsumer
+  (:import [dev.failsafe.function CheckedRunnable CheckedConsumer
             CheckedFunction CheckedSupplier]
+           [dev.failsafe.event EventListener]
            [java.util.function Predicate BiPredicate]))
 
 (defn verify-opt-map-keys [opt-map allowed-keys]
@@ -49,3 +50,8 @@
 
 (defn as-vector [v]
   (if (vector? v) v [v]))
+
+(defn wrap-event-listener [f]
+  (reify EventListener
+    (accept [_ e]
+      (f e))))

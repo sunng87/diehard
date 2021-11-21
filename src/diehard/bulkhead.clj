@@ -6,17 +6,17 @@
   #{:concurrency})
 
 (defprotocol IBulkhead
-  (acquire! [this] [this timeout-ms])
-  (release! [this]))
+  (acquire! [_] [this timeout-ms])
+  (release! [_]))
 
 (defrecord Bulkhead [semaphore]
   IBulkhead
-  (acquire! [this] (.acquire ^Semaphore semaphore))
-  (acquire! [this timeout-ms]
+  (acquire! [_] (.acquire ^Semaphore semaphore))
+  (acquire! [_ timeout-ms]
     (when-not (.tryAcquire ^Semaphore semaphore timeout-ms TimeUnit/MILLISECONDS)
       (throw (ex-info "Failed to acquire semaphore" {:bulkhead true
                                                      :max-wait-ms timeout-ms}))))
-  (release! [this]
+  (release! [_]
     (.release ^Semaphore semaphore)))
 
 (defn bulkhead

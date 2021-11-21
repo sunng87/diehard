@@ -1,6 +1,6 @@
 (ns diehard.core
   (:require [clojure.set :as set]
-            [diehard.spec :refer :all]
+            [diehard.spec]
             [diehard.util :as u]
             [diehard.circuit-breaker :as cb]
             [diehard.rate-limiter :as rl]
@@ -138,11 +138,11 @@
 (defn ^:no-doc fallback [opts]
   (when-some [fb (:fallback opts)]
     (.build (Fallback/builder ^CheckedFunction
-                              (u/fn-as-checked-function
-                               (fn [^ExecutionAttemptedEvent exec-event]
-                                 (let [fb (if-not (fn? fb) (constantly fb) fb)]
-                                   (with-context exec-event
-                                     (fb (.getLastResult exec-event) (.getLastFailure exec-event))))))))))
+             (u/fn-as-checked-function
+              (fn [^ExecutionAttemptedEvent exec-event]
+                (let [fb (if-not (fn? fb) (constantly fb) fb)]
+                  (with-context exec-event
+                    (fb (.getLastResult exec-event) (.getLastFailure exec-event))))))))))
 
 (defmacro ^{:doc "Predefined retry policy.
 #### Available options

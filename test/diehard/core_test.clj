@@ -195,27 +195,24 @@
       (is (= execution-count @execution-counter))
       (is (= execution-count @fallback-counter))))
 
-  (comment "disable for now"
-    (testing "predefined policy"
-     (defretrypolicy the-test-policy
-       {:retry-if (fn [v e] (< v 10))})
+  (testing "predefined policy"
+    (defretrypolicy the-test-policy
+      {:retry-if (fn [v e] (< v 10))})
 
-     (is (= 10 (with-retry {:policy the-test-policy} *executions*)))))
+    (is (= 10 (with-retry {:policy the-test-policy} *executions*))))
 
-  (comment "disabled for now"
-           (testing "predefined policy with customization"
-     (defretrypolicy the-test-policy
-       {:retry-if (fn [v e] (< v 10))})
+  (testing "predefined policy with customization"
+    (defretrypolicy the-test-policy
+      {:retry-if (fn [v e] (< v 10))})
 
-     (is (= 4 (with-retry {:policy the-test-policy
-                           :max-retries 4}
-                *executions*)))))
+    (is (= 4 (with-retry {:policy the-test-policy
+                          :max-retries 4}
+               *executions*))))
 
-  (comment "disabled for now"
-           (testing "issue #43"
-     (defretrypolicy policy-43 {:max-retries 2
-                                :retry-if (fn [v _] (< v 10))})
-     (is (= 2 (with-retry {:policy policy-43} *executions*)))))
+  (testing "issue #43"
+    (defretrypolicy policy-43 {:max-retries 2
+                               :retry-if (fn [v _] (< v 10))})
+    (is (= 2 (with-retry {:policy policy-43} *executions*))))
 
   (testing "RuntimeException"
     (let [retries (atom 0)]

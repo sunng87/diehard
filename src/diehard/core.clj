@@ -50,8 +50,9 @@
      ~@body))
 
 (defn ^:no-doc retry-policy-from-config [policy-map]
-  ;; TODO: ":policy support"
-  (let [policy (RetryPolicy/builder)]
+  (let [policy (if-let [policy (:policy policy-map)]
+                 (RetryPolicy/builder (.getConfig policy))
+                 (RetryPolicy/builder))]
 
     (when (contains? policy-map :abort-if)
       (.abortIf policy ^BiPredicate (u/bipredicate (:abort-if policy-map))))

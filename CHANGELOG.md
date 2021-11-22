@@ -1,5 +1,11 @@
 # Change Log
 
+## [0.11.0] - 2021-11-22
+
+### Changed
+
+- Update failsafe to 3.0
+
 ## [0.10.3] - 2021-01-28
 
 ### Fixed

@@ -4,7 +4,7 @@
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [[org.clojure/clojure "1.10.3"]
-                 [dev.failsafe/failsafe "3.1.0"]
+                 [dev.failsafe/failsafe "3.2.3"]
                  [org.clojure/spec.alpha "0.3.218"]]
   :plugins [[lein-codox "0.10.7"]
             [lein-eftest "0.5.9"]]

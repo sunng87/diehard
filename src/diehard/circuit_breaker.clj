@@ -2,8 +2,8 @@
   (:require [diehard.util :as u])
   (:import [java.time Duration]
            [java.util List]
-           [java.util.function BiPredicate]
-           [dev.failsafe CircuitBreaker]))
+           [dev.failsafe CircuitBreaker]
+           [dev.failsafe.function CheckedBiPredicate]))
 
 (def ^{:const true :no-doc true}
   allowed-circuit-breaker-option-keys
@@ -22,7 +22,7 @@
     (when (contains? opts :fail-on)
       (.handle cb ^List (u/as-vector (:fail-on opts))))
     (when (contains? opts :fail-if)
-      (.handleIf cb ^BiPredicate (u/bipredicate (:fail-if opts))))
+      (.handleIf cb ^CheckedBiPredicate (u/bipredicate (:fail-if opts))))
     (when (contains? opts :fail-when)
       (.handleResult cb (:fail-when opts)))
 

@@ -1,9 +1,8 @@
 (ns ^:no-doc diehard.util
   (:require [clojure.spec.alpha :as s])
   (:import [dev.failsafe.function CheckedRunnable CheckedConsumer
-            CheckedFunction CheckedSupplier]
-           [dev.failsafe.event EventListener]
-           [java.util.function Predicate BiPredicate]))
+            CheckedFunction CheckedSupplier CheckedBiPredicate CheckedPredicate]
+           [dev.failsafe.event EventListener]))
 
 (defn verify-opt-map-keys [opt-map allowed-keys]
   (doseq [k (keys opt-map)]
@@ -18,17 +17,17 @@
 
 (defn predicate-or-value [v]
   (cond
-    (fn? v) (reify Predicate (test [_ c] (boolean (v c))))
-    (vector? v) (reify Predicate (test [_ c] (contains? (set v) c)))
-    :else (reify Predicate (test [_ c] (= c v)))))
+    (fn? v) (reify CheckedPredicate (test [_ c] (boolean (v c))))
+    (vector? v) (reify CheckedPredicate (test [_ c] (contains? (set v) c)))
+    :else (reify CheckedPredicate (test [_ c] (= c v)))))
 
 (defn predicate [v]
-  (reify Predicate
+  (reify CheckedPredicate
     (test [_ return-value]
       (boolean (v return-value)))))
 
 (defn bipredicate [v]
-  (reify BiPredicate
+  (reify CheckedBiPredicate
     (test [_ return-value thrown-exception]
       (boolean (v return-value thrown-exception)))))
 

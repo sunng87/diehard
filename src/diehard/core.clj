@@ -9,14 +9,13 @@
   (:import [java.time Duration]
            [java.time.temporal ChronoUnit]
            [java.util List]
-           [java.util.function BiPredicate Predicate]
            [dev.failsafe Failsafe Fallback RetryPolicy FailsafeExecutor
             ExecutionContext FailsafeException
             CircuitBreakerOpenException]
            [dev.failsafe.event ExecutionAttemptedEvent
             ExecutionCompletedEvent]
            [dev.failsafe.function CheckedSupplier ContextualSupplier
-            CheckedFunction]))
+            CheckedFunction CheckedBiPredicate CheckedPredicate]))
 
 (def ^:const ^:no-doc
   policy-allowed-keys #{:policy :circuit-breaker
@@ -55,13 +54,13 @@
                  (RetryPolicy/builder))]
 
     (when (contains? policy-map :abort-if)
-      (.abortIf policy ^BiPredicate (u/bipredicate (:abort-if policy-map))))
+      (.abortIf policy ^CheckedBiPredicate (u/bipredicate (:abort-if policy-map))))
     (when (contains? policy-map :abort-on)
-      (.abortOn policy ^Predicate (u/predicate-or-value (:abort-on policy-map))))
+      (.abortOn policy ^CheckedPredicate (u/predicate-or-value (:abort-on policy-map))))
     (when (contains? policy-map :abort-when)
       (.abortWhen policy (:abort-when policy-map)))
     (when (contains? policy-map :retry-if)
-      (.handleIf policy ^BiPredicate (u/bipredicate (:retry-if policy-map))))
+      (.handleIf policy ^CheckedBiPredicate (u/bipredicate (:retry-if policy-map))))
     (when (contains? policy-map :retry-on)
       (.handle policy ^List (u/as-vector (:retry-on policy-map))))
     (when (contains? policy-map :retry-when)

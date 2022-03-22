@@ -7,7 +7,7 @@
   (util/verify-opt-map-keys-with-spec :timeout/timeout-new opts)
   (let [duration (Duration/ofMillis (:timeout-ms opts))
         timeout-policy (Timeout/builder duration)]
-    (when (contains? opts :interrupt?)
+    (when (:interrupt? opts)
       (.withInterrupt timeout-policy))
     (when (contains? opts :on-success)
       (.onSuccess timeout-policy (util/wrap-event-listener (:on-success opts))))

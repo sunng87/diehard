@@ -12,3 +12,9 @@
     (is false)
     (catch Exception e
       (is (not-empty (:clojure.spec.alpha/problems (ex-data e)))))))
+
+(deftest timeout-spec-check-test
+  (is (= {:interrupt? false :timeout-ms 100}
+         (u/verify-opt-map-keys-with-spec :timeout/timeout-new {:interrupt? false :timeout-ms 100})))
+  (is (thrown? Exception
+               (u/verify-opt-map-keys-with-spec :timeout/timeout-new {:interrupt? 1 :timeout-ms 100}))))

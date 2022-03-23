@@ -102,9 +102,6 @@
 (s/def :circuit-breaker/on-close fn?)
 (s/def :circuit-breaker/on-half-open fn?)
 
-(s/def :timeout/on-success fn?)
-(s/def :timeout/on-failure fn?)
-
 (s/def :circuit-breaker/circuit-breaker
   (only-keys :opt-un [:circuit-breaker/fail-if
                       :circuit-breaker/fail-on
@@ -124,8 +121,11 @@
                       :circuit-breaker/delay-ms
                       :circuit-breaker/timeout-ms]))
 
+;; timeout
+(s/def :timeout/on-success fn?)
+(s/def :timeout/on-failure fn?)
 (s/def :timeout/timeout-ms int?)
-(s/def :timeout/async? boolean?)
+(s/def :timeout/interrupt? boolean?)
 (s/def :timeout/timeout-new
   (only-keys :req-un [:timeout/timeout-ms]
              :opt-un [:timeout/interrupt?

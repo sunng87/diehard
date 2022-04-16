@@ -95,7 +95,7 @@
                 (u/wrap-event-listener
                  (fn [^ExecutionCompletedEvent event]
                    (with-context event
-                     (on-abort (.getResult event) (.getFailure event)))))))
+                     (on-abort (.getResult event) (.getException event)))))))
     (when-let [on-failed-attempt (:on-failed-attempt policy-map)]
       (.onFailedAttempt policy
                         (u/wrap-event-listener
@@ -108,7 +108,7 @@
                   (u/wrap-event-listener
                    (fn [^ExecutionCompletedEvent event]
                      (with-context event
-                       (on-failure (.getResult event) (.getFailure event)))))))
+                       (on-failure (.getResult event) (.getException event)))))))
 
     (when-let [on-retry (:on-retry policy-map)]
       (.onRetry policy
@@ -123,7 +123,7 @@
                           (u/wrap-event-listener
                            (fn [^ExecutionCompletedEvent event]
                              (with-context event
-                               (on-retries-exceeded (.getResult event) (.getFailure event)))))))
+                               (on-retries-exceeded (.getResult event) (.getException event)))))))
 
     (when-let [on-success (:on-success policy-map)]
       (.onSuccess policy
@@ -342,7 +342,7 @@ It will work together with retry policy as quit criteria.
                                      (fn [^ExecutionCompletedEvent event#]
                                        (with-context event#
                                          (on-complete# (.getResult event#)
-                                                       (.getFailure event#))))))
+                                                       (.getException event#))))))
                        failsafe#)
            callable# (reify ContextualSupplier
                        (get [_# ^ExecutionContext ctx#]
@@ -451,7 +451,7 @@ You can always check circuit breaker state with
                                    (fn [^ExecutionCompletedEvent event#]
                                      (with-context event#
                                        (on-complete# (.getResult event#)
-                                                     (.getFailure event#))))))
+                                                     (.getException event#))))))
                      failsafe#)
 
          supplier# (reify CheckedSupplier

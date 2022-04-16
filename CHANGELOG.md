@@ -1,5 +1,11 @@
 # Change Log
 
+## [0.11.3] - 2022-04-16
+
+### Fixed
+
+- Removed deprecated failsafe API usage
+
 ## [0.11.0] - 2021-11-22
 
 ### Changed

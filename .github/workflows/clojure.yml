@@ -1,6 +1,6 @@
 name: Clojure CI
 
-on: [push]
+on: [push, pull_request]
 
 jobs:
   build:
@@ -13,5 +13,9 @@ jobs:
     - name: Run tests
       run: clojure -M:test
 
-    - name: Antq Action
+  antq:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3.0.2
+    - name: antq
       uses: liquidz/antq-action@v1.3

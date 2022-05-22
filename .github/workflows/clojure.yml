@@ -7,8 +7,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
+    - uses: DeLaGuardo/setup-clojure@master
+      with:
+        cli: 1.11.1.1105
     - name: Run tests
-      uses: DeLaGuardo/setup-clojure@master
       run: clojure -M:test
 
     - name: Antq Action

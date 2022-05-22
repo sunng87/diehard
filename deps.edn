@@ -1,4 +1,4 @@
-{:deps {dev.failsafe/failsafe {:mvn/version "3.2.3"}
+{:deps {dev.failsafe/failsafe {:mvn/version "3.2.4"}
         org.clojure/spec.alpha {:mvn/version "0.3.218"}
         org.clojure/clojure {:mvn/version "1.11.1"}}
  :paths ["src" "resources"]

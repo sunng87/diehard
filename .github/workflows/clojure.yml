@@ -8,6 +8,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Run tests
+      uses: DeLaGuardo/setup-clojure@master
       run: clojure -M:test
 
     - name: Antq Action

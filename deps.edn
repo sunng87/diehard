@@ -1,0 +1,11 @@
+{:deps {dev.failsafe/failsafe {:mvn/version "3.2.3"}
+        org.clojure/spec.alpha {:mvn/version "0.3.218"}
+        org.clojure/clojure {:mvn/version "1.11.1"}}
+ :paths ["src" "resources"]
+ :aliases {:test
+           {:extra-paths ["test" "dev-resources"]
+            :extra-deps  {io.github.cognitect-labs/test-runner {:git/tag "v0.5.1" :git/sha "dfb30dd"}}
+            :exec-fn     cognitect.test-runner.api/test
+            :main-opts ["-m" "cognitect.test-runner"]}
+           :dev
+           {:extra-paths ["dev-resources"]}}}

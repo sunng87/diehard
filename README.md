@@ -1,7 +1,6 @@
 # diehard
 
-[![Build
-Status](https://travis-ci.org/sunng87/diehard.svg?branch=master)](https://travis-ci.org/sunng87/diehard)
+[![CI](https://github.com/sunng87/diehard/actions/workflows/clojure.yml/badge.svg)](https://github.com/sunng87/diehard/actions/workflows/clojure.yml)
 [![Clojars](https://img.shields.io/clojars/v/diehard.svg?maxAge=2592000)](https://clojars.org/diehard)
 [![license](https://img.shields.io/github/license/sunng87/diehard.svg?maxAge=2592000)]()
 [![Donate](https://img.shields.io/badge/donate-liberapay-yellow.svg)](https://liberapay.com/Sunng/donate)

@@ -4,10 +4,11 @@ on: [push]
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
-
     steps:
     - uses: actions/checkout@v2
     - name: Run tests
-      run: lein test
+      run: clojure -M:test
+
+    - name: Antq Action
+      uses: liquidz/antq-action@v1.3

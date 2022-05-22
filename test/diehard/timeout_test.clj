@@ -17,7 +17,7 @@
   (testing "get exceeds timeout and throws timeout exception"
     (is (thrown? TimeoutExceededException
                  (with-timeout {:timeout-ms timeout-duration}
-                   (Thread/sleep 60)
+                   (Thread/sleep 100)
                    "result"))))
   (testing "get given interrupt flag set exceeds timeout and throws"
     (let [start (System/currentTimeMillis)

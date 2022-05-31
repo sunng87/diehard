@@ -18,4 +18,4 @@
            :build
            {:extra-deps {com.github.liquidz/build.edn {:git/sha "a4a8f70" :git/tag "0.3.82"}}
             :ns-default build-edn.main
-            :exec-args {:deploy-repository {:id "clojars"}}}}}
+            :exec-args {}}}}

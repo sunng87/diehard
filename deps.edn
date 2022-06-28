@@ -16,6 +16,6 @@
             :exec-args {:source-paths  ["src"]}}
 
            :build
-           {:extra-deps {com.github.liquidz/build.edn {:git/sha "e3a3e31" :git/tag "0.3.90"}}
+           {:extra-deps {com.github.liquidz/build.edn {:git/sha "cf69a2a" :git/tag "0.4.107"}}
             :ns-default build-edn.main
             :exec-args {}}}}

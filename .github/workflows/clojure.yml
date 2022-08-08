@@ -6,21 +6,21 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3.0.2
-    - uses: DeLaGuardo/setup-clojure@master
-      with:
-        cli: 1.11.1.1149
-    - uses: DeLaGuardo/setup-clj-kondo@master
-      with:
-        version: '2022.06.22'
-    - name: lint
-      run: clj-kondo --lint src
-    - name: Run tests
-      run: clojure -M:test
+      - uses: actions/checkout@v3.0.2
+      - uses: DeLaGuardo/setup-clojure@master
+        with:
+          cli: 1.11.1.1155
+      - uses: DeLaGuardo/setup-clj-kondo@master
+        with:
+          version: "2022.08.03"
+      - name: lint
+        run: clj-kondo --lint src
+      - name: Run tests
+        run: clojure -M:test
 
   antq:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3.0.2
-    - name: antq
-      uses: liquidz/antq-action@v2.0.0
+      - uses: actions/checkout@v3.0.2
+      - name: antq
+        uses: liquidz/antq-action@v2.0.0

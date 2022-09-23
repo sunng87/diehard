@@ -1,4 +1,4 @@
-{:deps {dev.failsafe/failsafe {:mvn/version "3.2.4"}
+{:deps {dev.failsafe/failsafe {:mvn/version "3.3.0"}
         org.clojure/spec.alpha {:mvn/version "0.3.218"}
         org.clojure/clojure {:mvn/version "1.11.1"}}
  :paths ["src"]
@@ -13,7 +13,9 @@
            :codox
            {:extra-deps {codox/codox {:mvn/version "0.10.8"}}
             :exec-fn codox.main/generate-docs
-            :exec-args {:source-paths  ["src"]}}
+            :exec-args {:source-paths  ["src"]
+                        :source-uri "https://github.com/sunng87/diehard/blob/master/{filepath}#L{line}"
+                        :metadata {:doc/format :markdown}}}
 
            :build
            {:extra-deps {com.github.liquidz/build.edn {:git/tag "0.7.145" :git/sha "776501e"}}

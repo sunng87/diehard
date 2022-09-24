@@ -6,9 +6,9 @@
             [diehard.rate-limiter :as rl]
             [diehard.timeout :as dt]
             [diehard.bulkhead :as bh])
-  (:import [java.time Duration]
+  (:import [java.time Duration Instant]
            [java.time.temporal ChronoUnit]
-           [java.util List]
+           [java.util List Optional]
            [dev.failsafe Failsafe Fallback RetryPolicy FailsafeExecutor
             ExecutionContext FailsafeException
             CircuitBreakerOpenException]
@@ -45,7 +45,16 @@
 (defmacro ^:no-doc with-context [ctx & body]
   `(binding [*elapsed-time-ms* (.toMillis ^Duration (.getElapsedTime ~ctx))
              *executions* (long (.getAttemptCount ~ctx))
-             *start-time-ms* (.toMillis ^Duration (.getStartTime ~ctx))]
+             *start-time-ms* (.toEpochMilli ^Instant (.getStartTime ~ctx))]
+     ~@body))
+
+(defmacro ^:no-doc with-event-context [ctx & body]
+  `(binding [*elapsed-time-ms* (.toMillis ^Duration (.getElapsedTime ~ctx))
+             *executions* (long (.getAttemptCount ~ctx))
+             *start-time-ms* (let [start-time# (.getStartTime ~ctx)]
+                               (if (.isPresent start-time#)
+                                 (.toEpochMilli ^Instant (.get ^Optional start-time#))
+                                 -1))]
      ~@body))
 
 (defn ^:no-doc retry-policy-from-config [policy-map]
@@ -94,42 +103,42 @@
       (.onAbort policy
                 (u/wrap-event-listener
                  (fn [^ExecutionCompletedEvent event]
-                   (with-context event
+                   (with-event-context event
                      (on-abort (.getResult event) (.getException event)))))))
     (when-let [on-failed-attempt (:on-failed-attempt policy-map)]
       (.onFailedAttempt policy
                         (u/wrap-event-listener
                          (fn [^ExecutionAttemptedEvent event]
-                           (with-context event
+                           (with-event-context event
                              (on-failed-attempt (.getLastResult event)
-                                                (.getLastFailure event)))))))
+                                                (.getLastException event)))))))
     (when-let [on-failure (:on-failure policy-map)]
       (.onFailure policy
                   (u/wrap-event-listener
                    (fn [^ExecutionCompletedEvent event]
-                     (with-context event
+                     (with-event-context event
                        (on-failure (.getResult event) (.getException event)))))))
 
     (when-let [on-retry (:on-retry policy-map)]
       (.onRetry policy
                 (u/wrap-event-listener
                  (fn [^ExecutionAttemptedEvent event]
-                   (with-context event
+                   (with-event-context event
                      (on-retry (.getLastResult event)
-                               (.getLastFailure event)))))))
+                               (.getLastException event)))))))
 
     (when-let [on-retries-exceeded (:on-retries-exceeded policy-map)]
       (.onRetriesExceeded policy
                           (u/wrap-event-listener
                            (fn [^ExecutionCompletedEvent event]
-                             (with-context event
+                             (with-event-context event
                                (on-retries-exceeded (.getResult event) (.getException event)))))))
 
     (when-let [on-success (:on-success policy-map)]
       (.onSuccess policy
                   (u/wrap-event-listener
                    (fn [^ExecutionCompletedEvent event]
-                     (with-context event
+                     (with-event-context event
                        (on-success (.getResult event)))))))
 
     (.build policy)))
@@ -140,8 +149,8 @@
              (u/fn-as-checked-function
               (fn [^ExecutionAttemptedEvent exec-event]
                 (let [fb (if-not (fn? fb) (constantly fb) fb)]
-                  (with-context exec-event
-                    (fb (.getLastResult exec-event) (.getLastFailure exec-event))))))))))
+                  (with-event-context exec-event
+                    (fb (.getLastResult exec-event) (.getLastException exec-event))))))))))
 
 (defmacro ^{:doc "Predefined retry policy.
 #### Available options
@@ -340,7 +349,7 @@ It will work together with retry policy as quit criteria.
                        (.onComplete failsafe#
                                     (u/wrap-event-listener
                                      (fn [^ExecutionCompletedEvent event#]
-                                       (with-context event#
+                                       (with-event-context event#
                                          (on-complete# (.getResult event#)
                                                        (.getException event#))))))
                        failsafe#)

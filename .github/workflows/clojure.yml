@@ -9,7 +9,7 @@ jobs:
       - uses: actions/checkout@v3.1.0
       - uses: DeLaGuardo/setup-clojure@master
         with:
-          cli: 1.11.1.1177
+          cli: 1.11.1.1182
       - uses: DeLaGuardo/setup-clj-kondo@master
         with:
           version: "2022.10.14"

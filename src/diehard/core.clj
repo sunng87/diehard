@@ -82,7 +82,7 @@
         (if (nil? multiplier)
           (.withBackoff policy delay max-delay ChronoUnit/MILLIS)
           (.withBackoff policy delay max-delay ChronoUnit/MILLIS multiplier))))
-    (when-let [delay  (:delay-ms policy-map)]
+    (when-let [delay (:delay-ms policy-map)]
       (.withDelay policy (Duration/ofMillis delay)))
     (when-let [duration (:max-duration-ms policy-map)]
       (.withMaxDuration policy (Duration/ofMillis duration)))

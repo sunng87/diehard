@@ -61,6 +61,10 @@
     (is (= 4 (with-retry {:retry-if (fn [v e] (< v 10))
                           :max-retries 4}
                *executions*))))
+  (testing "max retry"
+    (is (thrown? clojure.lang.ExceptionInfo
+                 (with-retry {:max-retries 3}
+                   (throw (ex-info "expected" {}))))))
   (testing "delay"
     (with-retry {:retry-if (fn [v e] (< v 2))
                  :delay-ms 20}

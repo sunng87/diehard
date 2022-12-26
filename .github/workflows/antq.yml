@@ -8,4 +8,4 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: antq
-      uses: liquidz/antq-action@v2
+      uses: liquidz/antq-action@main

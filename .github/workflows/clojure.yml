@@ -9,10 +9,10 @@ jobs:
       - uses: actions/checkout@v3
       - uses: DeLaGuardo/setup-clojure@master
         with:
-          cli: 1.11.1.1208
+          cli: 1.11.1.1224
       - uses: DeLaGuardo/setup-clj-kondo@master
         with:
-          version: "2022.12.10"
+          version: "2023.02.17"
       - name: lint
         run: clj-kondo --lint src
       - name: Run tests

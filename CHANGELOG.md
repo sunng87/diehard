@@ -1,5 +1,11 @@
 # Change Log
 
+## [0.11.7] - 2023-05-03
+
+### Fixed
+
+- Nullpoint when wrapping `with-timeout` in `with-retry` #[56]
+
 ## [0.11.3] - 2022-04-16
 
 ### Fixed

@@ -2,7 +2,7 @@
   (:require [clojure.test :refer :all]
             [diehard.circuit-breaker :as cb]
             [diehard.core :refer :all])
-  (:import [dev.failsafe CircuitBreakerOpenException]
+  (:import [dev.failsafe CircuitBreakerOpenException TimeoutExceededException]
            [java.util.concurrent CountDownLatch]))
 
 (deftest test-retry
@@ -226,7 +226,13 @@
           (throw (RuntimeException.)))
         (is false)
         (catch RuntimeException _
-          (is (= 1 @retries)))))))
+          (is (= 1 @retries))))))
+
+  (testing "retry block exception has no cause"
+    (is (thrown? TimeoutExceededException
+                 (with-retry {:max-retries 1}
+                   (with-timeout {:timeout-ms 100}
+                     (Thread/sleep 200)))))))
 
 (deftest test-circuit-breaker-params
   (testing "failure threshold ratio"

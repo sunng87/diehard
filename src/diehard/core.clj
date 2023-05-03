@@ -362,7 +362,9 @@ It will work together with retry policy as quit criteria.
          (catch CircuitBreakerOpenException e#
            (throw e#))
          (catch FailsafeException e#
-           (throw (.getCause e#)))))))
+           (if-let [cause# (.getCause e#)]
+             (throw cause#)
+             (throw e#)))))))
 
 (defmacro ^{:doc "Define a circuit breaker with option.
 #### Available options

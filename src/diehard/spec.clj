@@ -101,6 +101,7 @@
 (s/def :circuit-breaker/on-open fn?)
 (s/def :circuit-breaker/on-close fn?)
 (s/def :circuit-breaker/on-half-open fn?)
+(s/def :circuit-breaker/on-complete fn?)
 
 (s/def :circuit-breaker/circuit-breaker
   (only-keys :opt-un [:circuit-breaker/fail-if
@@ -117,6 +118,7 @@
                       :circuit-breaker/on-open
                       :circuit-breaker/on-half-open
                       :circuit-breaker/on-close
+                      :circuit-breaker/on-complete
 
                       :circuit-breaker/delay-ms
                       :circuit-breaker/timeout-ms]))

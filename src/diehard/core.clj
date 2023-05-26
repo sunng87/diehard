@@ -34,13 +34,13 @@
 
 (def ^{:dynamic true
        :doc "Available in retry block. Contextual value represents time elasped since first attempt"}
-  *elapsed-time-ms*)
+  *elapsed-time-ms* 0)
 (def ^{:dynamic true
        :doc "Available in retry block. Contextual value represents execution times"}
-  *executions*)
+  *executions* 0)
 (def ^{:dynamic true
        :doc "Available in retry block. Contextual value represents first attempt time"}
-  *start-time-ms*)
+  *start-time-ms* 0)
 
 (defmacro ^:no-doc with-context [ctx & body]
   `(binding [*elapsed-time-ms* (.toMillis ^Duration (.getElapsedTime ~ctx))

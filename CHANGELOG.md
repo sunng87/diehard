@@ -1,5 +1,11 @@
 # Change Log
 
+## [0.11.8] - 2023-05-28
+
+### Fixed
+
+- `on-complete` spec for circuit breaker #[60]
+
 ## [0.11.7] - 2023-05-03
 
 ### Fixed

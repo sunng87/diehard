@@ -37,7 +37,7 @@ execution if the open condition triggered.
 ```clojure
 (require '[diehard.core :as dh])
 
-(defcircuitbreaker my-cb {:failure-threshold-ratio [8 10]
+(dh/defcircuitbreaker my-cb {:failure-threshold-ratio [8 10]
                           :delay-ms 1000})
 
 (dh/with-circuit-breaker my-cb
@@ -53,7 +53,7 @@ configuration.
 ```clojure
 (require '[diehard.core :as dh])
 
-(defratelimiter my-rl {:rate 100})
+(dh/defratelimiter my-rl {:rate 100})
 
 (dh/with-rate-limiter my-rl
   (send-people-to-the-moon))
@@ -67,7 +67,7 @@ Bulkhead allows you to limit concurrent execution on a code block.
 (require '[diehard.core :as dh])
 
 ;; at most 10 threads can run the code block concurrently
-(defbulkhead my-bh {:concurrency 10})
+(dh/defbulkhead my-bh {:concurrency 10})
 
 (dh/with-bulkhead my-bh
   (send-people-to-the-moon))
@@ -80,7 +80,7 @@ Timeouts allow you to fail an execution with `TimeoutExceededException` if it ta
 ```clojure
 (require '[diehard.core :as dh])
 
-(with-timeout {:timeout-ms 5000}
+(dh/with-timeout {:timeout-ms 5000}
   (fly-me-to-the-moon))
 ```
 
@@ -118,7 +118,7 @@ More options can be found in the documentation
 
 ## License
 
-Copyright © 2016-2019 Ning Sun
+Copyright © 2016-2023 Ning Sun
 
 Distributed under the Eclipse Public License either version 1.0 or (at
 your option) any later version.

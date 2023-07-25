@@ -116,6 +116,15 @@ not good
 More options can be found in the documentation
 [from cljdoc](https://cljdoc.org/d/diehard/diehard/).
 
+## Build
+
+This project uses deps.edn and build.edn for dependency management. To build the
+project, run
+
+```shell
+clojure -T:build install
+```
+
 ## License
 
 Copyright © 2016-2023 Ning Sun

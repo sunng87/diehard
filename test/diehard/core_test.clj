@@ -333,7 +333,15 @@
                  :skipped)
                (catch IllegalStateException _
                  :failure)))))
-    (is (= :open (cb/state test-cb-4)))))
+    (is (= :open (cb/state test-cb-4)))
+    
+  (testing "inner block exception has no cause"
+    (defcircuitbreaker test-cb {:failure-threshold 2
+                                    :delay-ms 100000})
+    (is (thrown? TimeoutExceededException
+                 (with-circuit-breaker test-cb
+                   (with-timeout {:timeout-ms 100}
+                     (Thread/sleep 200))))))))
 
 (deftest opt-eval-count
   (let [eval-counter (atom 0)]

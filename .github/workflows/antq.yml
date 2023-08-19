@@ -1,6 +1,6 @@
 name: Antq
 on:
-  schedule: [{cron: "0 13 * * *"}]
+  schedule: [{cron: "0 13 * * 6"}]
 
 jobs:
   antq:

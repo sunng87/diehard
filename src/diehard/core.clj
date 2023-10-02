@@ -202,6 +202,8 @@
   `exception` as arguments, called when max retries or max duration have
   been exceeded.
 
+Note that exceptions thrown from listeners will not throw in retry blocks.
+
 ##### Use pre-defined policy
 
 You can put together all those retry policies in a `defretrypolicy`.
@@ -276,6 +278,8 @@ the last execution. If `:circuit-breaker` is set, it will throw
 * `:on-retries-exceeded` accepts a function which takes `result` and
   `exception` as arguments, called when retries exceeded
 
+Note that exceptions thrown from listeners will not throw in retry blocks.
+
 ##### Use pre-defined policy
 
 You can put together all those retry policies in a `defretrypolicy`.
@@ -290,24 +294,6 @@ And use `:policy` option in option map.
   ;; your code here
   )
 ```
-
-##### Retry Listeners
-
-* `:on-abort` accepts a function which takes `result`, `exception` as
-  arguments, called when retry aborted
-* `:on-complete` accepts a function which takes `result`, `exception` as
-  arguments, called when exiting `retry` block
-* `:on-failed-attempt` accepts a function which takes `result`,
-  `exception` as arguments, called when execution failed (matches
-  retry criteria)
-* `:on-failure` accepts a function which takes `result`,
-  `exception` as arguments, called when exiting `retry` block with
-  failure (matches retry criteria)
-* `:on-success` accepts a function which takes `result` as arguments,
-  called when exiting `retry` block with success (mismatches retry
-  criteria)
-* `:on-retry` accepts a function which takes `result` as arguments,
-  called when a retry attempted.
 
 ##### Fallback
 

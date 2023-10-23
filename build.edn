@@ -1,3 +1,5 @@
 {:lib diehard/diehard
  :version "0.11.10-SNAPSHOT"
- :deploy-repository {:id "clojars"}}
+ :deploy-repository {:id "clojars"}
+ :licenses [{:name "Eclipse Public License - v2.0"
+             :url "https://www.eclipse.org/legal/epl-2.0/"}]}

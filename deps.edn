@@ -18,6 +18,6 @@
                         :metadata {:doc/format :markdown}}}
 
            :build
-           {:extra-deps {com.github.liquidz/build.edn {:git/sha "623101d29366806bc6402b2d2c349c09a566e6f2"}}
+           {:extra-deps {com.github.liquidz/build.edn {:mvn/version "0.11.241"}}
             :ns-default build-edn.main
             :exec-args {}}}}

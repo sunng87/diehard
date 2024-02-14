@@ -1,5 +1,11 @@
 # Change Log
 
+## [0.11.9] - 2023-08-01
+
+### Fixed
+
+- Null pointer when wrapping `with-timeout` in `with-circuitbreaker` #[63]
+
 ## [0.11.8] - 2023-05-28
 
 ### Fixed

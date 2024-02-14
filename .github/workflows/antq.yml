@@ -1,11 +1,11 @@
 name: Antq
 on:
-  schedule: [{cron: "0 13 * * *"}]
+  schedule: [{cron: "0 13 * * 6"}]
 
 jobs:
   antq:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4.1.1
     - name: antq
       uses: liquidz/antq-action@main

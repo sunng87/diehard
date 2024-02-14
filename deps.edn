@@ -1,4 +1,4 @@
-{:deps {dev.failsafe/failsafe {:mvn/version "3.3.1"}
+{:deps {dev.failsafe/failsafe {:mvn/version "3.3.2"}
         org.clojure/spec.alpha {:mvn/version "0.3.218"}
         org.clojure/clojure {:mvn/version "1.11.1"}}
  :paths ["src"]
@@ -18,6 +18,6 @@
                         :metadata {:doc/format :markdown}}}
 
            :build
-           {:extra-deps {com.github.liquidz/build.edn {:mvn/version "0.9.216"}}
+           {:extra-deps {com.github.liquidz/build.edn {:mvn/version "0.11.241"}}
             :ns-default build-edn.main
             :exec-args {}}}}

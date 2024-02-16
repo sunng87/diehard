@@ -1,5 +1,11 @@
 # Change Log
 
+## [0.11.11] - 2024-02-16
+
+### Added
+
+- Allow floatpoint number as rate in rate limiter #[61]
+
 ## [0.11.9] - 2023-08-01
 
 ### Fixed

@@ -460,8 +460,8 @@ You can always check circuit breaker state with
          (throw e#))
        (catch FailsafeException e#
          (if-let [cause# (.getCause e#)]
-             (throw cause#)
-             (throw e#))))))
+           (throw cause#)
+           (throw e#))))))
 
 (defmacro
   ^{:doc "Create a rate limiter with options.

@@ -39,4 +39,4 @@
       (let [variance (Math/abs (- @counter (* rate time-secs)))]
         (t/is (<= variance
                 ;; error tolerance: 0.5  -- larger, because we are dealing with slower ticks
-                0.5))))))
+                  0.5))))))

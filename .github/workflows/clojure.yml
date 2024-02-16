@@ -11,9 +11,7 @@ jobs:
         with:
           cli: "latest"
           cljfmt: "latest"
-      - uses: DeLaGuardo/setup-clj-kondo@master
-        with:
-          version: "latest"
+          clj-kondo: "latest"
       - name: format
         run: cljfmt check
       - name: lint

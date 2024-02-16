@@ -135,7 +135,9 @@
                       :timeout/on-failure]))
 
 ;; rate limiter
-(s/def :rate-limiter/rate int?)
+; allow floating point numbers, so that we can pass numbers such as 0.5, to signify 1 req / 2 seconds
+;(s/def :rate-limiter/rate int?)
+(s/def :rate-limiter/rate number?)
 (s/def :rate-limiter/max-cached-tokens int?)
 
 (s/def :rate-limiter/rate-limiter-new

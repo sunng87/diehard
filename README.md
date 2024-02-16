@@ -48,7 +48,8 @@ execution if the open condition triggered.
 
 A rate limiter protects your code block to run limited times per
 second. It will block or throw exception depends on your
-configuration.
+configuration. (:rate is a floating point number, and can be less than 1.0. 
+Example: 0.5 is once every two seconds.)
 
 ```clojure
 (require '[diehard.core :as dh])

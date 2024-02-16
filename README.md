@@ -81,7 +81,8 @@ Timeouts allow you to fail an execution with `TimeoutExceededException` if it ta
 ```clojure
 (require '[diehard.core :as dh])
 
-(dh/with-timeout {:timeout-ms 5000}
+(dh/with-timeout {:timeout-ms 5000
+                  :interrupt? true}
   (fly-me-to-the-moon))
 ```
 

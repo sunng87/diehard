@@ -31,7 +31,7 @@
   (acquire! [this permits]
     (let [sleep (do-acquire this permits)]
       (when (> sleep 0)
-        (Thread/sleep sleep))))
+        (Thread/sleep ^long sleep))))
   (try-acquire [this]
     (try-acquire this 1))
   (try-acquire [this permits]
@@ -42,7 +42,7 @@
         false
         (do
           (when (> sleep 0)
-            (Thread/sleep sleep))
+            (Thread/sleep ^long sleep))
           true)))))
 
 (defn- refill [^TokenBucketRateLimiter rate-limiter]

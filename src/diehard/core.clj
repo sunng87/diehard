@@ -59,7 +59,7 @@
 
 (defn ^:no-doc retry-policy-from-config [policy-map]
   (let [policy (if-let [policy (:policy policy-map)]
-                 (RetryPolicy/builder (.getConfig policy))
+                 (RetryPolicy/builder (.getConfig ^RetryPolicy policy))
                  (RetryPolicy/builder))]
 
     (when (contains? policy-map :abort-if)
@@ -80,8 +80,8 @@
       (let [backoff-config (:backoff-ms policy-map)
             [delay max-delay multiplier] backoff-config]
         (if (nil? multiplier)
-          (.withBackoff policy delay max-delay ChronoUnit/MILLIS)
-          (.withBackoff policy delay max-delay ChronoUnit/MILLIS multiplier))))
+          (.withBackoff policy ^long delay ^long max-delay ChronoUnit/MILLIS)
+          (.withBackoff policy ^long delay ^long max-delay ChronoUnit/MILLIS ^double multiplier))))
     (when-let [delay (:delay-ms policy-map)]
       (.withDelay policy (Duration/ofMillis delay)))
     (when-let [duration (:max-duration-ms policy-map)]

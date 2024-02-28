@@ -75,4 +75,4 @@ on current state:
   * `:close` allows all executions
   * `:half-open` only allows some of execution requests"
   [^CircuitBreaker cb]
-  (.allowsExecution cb))
+  (.tryAcquirePermit cb))

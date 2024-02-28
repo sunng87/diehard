@@ -9,7 +9,7 @@
   (:import [java.time Duration Instant]
            [java.time.temporal ChronoUnit]
            [java.util List Optional]
-           [dev.failsafe Failsafe Fallback RetryPolicy RetryPolicyConfig FailsafeExecutor
+           [dev.failsafe Failsafe Fallback RetryPolicy FailsafeExecutor
             ExecutionContext FailsafeException
             CircuitBreakerOpenException]
            [dev.failsafe.event ExecutionAttemptedEvent

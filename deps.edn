@@ -18,6 +18,6 @@
                         :metadata {:doc/format :markdown}}}
 
            :build
-           {:extra-deps {com.github.liquidz/build.edn {:mvn/version "0.11.241"}}
+           {:extra-deps {com.github.liquidz/build.edn {:mvn/version "0.11.257"}}
             :ns-default build-edn.main
             :exec-args {}}}}

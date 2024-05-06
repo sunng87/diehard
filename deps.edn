@@ -1,6 +1,6 @@
 {:deps {dev.failsafe/failsafe {:mvn/version "3.3.2"}
         org.clojure/spec.alpha {:mvn/version "0.4.233"}
-        org.clojure/clojure {:mvn/version "1.11.2"}}
+        org.clojure/clojure {:mvn/version "1.11.3"}}
  :paths ["src"]
  :aliases {:test
            {:extra-paths ["test"]

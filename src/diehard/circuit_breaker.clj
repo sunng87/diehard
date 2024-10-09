@@ -10,7 +10,7 @@
   #{:failure-threshold :failure-threshold-ratio :failure-threshold-ratio-in-period
     :failure-rate-threshold-in-period
     :success-threshold :success-threshold-ratio
-    :delay-ms :timeout-ms
+    :delay-ms
 
     :fail-if :fail-on :fail-when
 

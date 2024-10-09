@@ -366,10 +366,6 @@ retry block.
 * `:fail-if`
 * `:fail-on`
 * `:fail-when`
-* `:timeout-ms` while give all you code a timeout is best practice in
-  application level, circuit breaker also provides a timeout for
-  marking a long running block as failure
-
 
 ##### Delay and threshold
 

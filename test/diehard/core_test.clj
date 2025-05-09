@@ -390,7 +390,7 @@
       (let [counter0 (atom 0)]
         (try
           (while (< @counter0 200)
-            (with-rate-limiter {:ratelimiter my-rl
+            (with-rate-limiter {:ratelimiter my-rl3
                                 :max-wait-ms 1}
               (my-fn counter0)))
           (is false)

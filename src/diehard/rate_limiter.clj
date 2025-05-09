@@ -92,12 +92,13 @@
 
 (defn rate-limiter
   "Create a default rate limiter with:
-  * `rate`: permits per second
+  * `rate`: permits per second (may be a floating point, e.g. 0.5 <=> 1 req every 2 sec)
   * `max-cached-tokens`: the max size of tokens that the bucket can cache when it's idle"
-  [opts]
-  (if-let [rate (:rate opts)]
-    (let [max-cached-tokens (:max-cached-tokens opts rate)]
-      (TokenBucketRateLimiter. (/ (double rate) 1000) max-cached-tokens
+  [{:keys [rate max-cached-tokens] :as _opts}]
+  (if (some? rate)
+    (let [max-cached-tokens (or max-cached-tokens (int rate))]
+      (TokenBucketRateLimiter. (/ (double rate) 1000)
+                               max-cached-tokens
                                (atom {:reserved-tokens (double 0)
-                                      :last-refill-ts (long -1)})))
+                                      :last-refill-ts  (long -1)})))
     (throw (IllegalArgumentException. ":rate is required for rate-limiter"))))

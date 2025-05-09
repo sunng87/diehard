@@ -73,10 +73,6 @@
       (->sleep-ms (:reserved-tokens state) (.-rate rate-limiter)))
     (catch ExceptionInfo _)))
 
-(def ^{:const true :no-doc true}
-  allowed-rate-limiter-option-keys
-  #{:rate :max-cached-tokens})
-
 (defn rate-limiter
   "Create a default rate limiter with:
   * `rate`: permits per second (may be a floating point, e.g. 0.5 <=> 1 req every 2 sec)

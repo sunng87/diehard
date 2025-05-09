@@ -1,4 +1,6 @@
-(ns diehard.rate-limiter)
+(ns diehard.rate-limiter
+  (:require [diehard.util :as u])
+  (:import [clojure.lang ExceptionInfo]))
 
 (defprotocol IRateLimiter
   (acquire!
@@ -14,14 +16,6 @@
 
 (declare refill acquire-sleep-ms try-acquire-sleep-ms)
 
-(defn- do-acquire [rate-limiter permits]
-  (refill rate-limiter)
-  (acquire-sleep-ms rate-limiter permits))
-
-(defn- do-try-acquire [rate-limiter permits max-wait-ms]
-  (refill rate-limiter)
-  (try-acquire-sleep-ms rate-limiter permits max-wait-ms))
-
 (defrecord TokenBucketRateLimiter [rate max-tokens
                                    ;; internal state
                                    state]
@@ -29,24 +23,20 @@
   (acquire! [this]
     (acquire! this 1))
   (acquire! [this permits]
-    (let [sleep (do-acquire this permits)]
-      (when (> sleep 0)
-        (Thread/sleep ^long sleep))))
+    (refill this)
+    (let [sleep-ms (acquire-sleep-ms this permits)]
+      (u/sleep sleep-ms)))
   (try-acquire [this]
     (try-acquire this 1))
   (try-acquire [this permits]
     (try-acquire this permits 0))
   (try-acquire [this permits wait-ms]
-    (let [sleep (do-try-acquire this permits wait-ms)]
-      (if (false? sleep)
-        false
-        (do
-          (when (> sleep 0)
-            (Thread/sleep ^long sleep))
-          true)))))
+    (refill this)
+    (if-some [sleep-ms (try-acquire-sleep-ms this permits wait-ms)]
+      (do (u/sleep sleep-ms) true)
+      false)))
 
 (defn- refill [^TokenBucketRateLimiter rate-limiter]
-  ;; refill
   (let [now (System/currentTimeMillis)]
     (swap! (.-state rate-limiter)
            (fn [state]
@@ -59,32 +49,29 @@
                             %))
                  (assoc :last-refill-ts now))))))
 
-(defn- acquire-sleep-ms [^TokenBucketRateLimiter rate-limiter permits]
-  (let [{pending-tokens :reserved-tokens} (swap! (.-state rate-limiter)
-                                                 update :reserved-tokens + permits)]
-    (if (<= pending-tokens 0)
-      0
-      ;; time as milliseconds
-      (long (/ pending-tokens (.-rate rate-limiter))))))
+(defn- ->sleep-ms ^long [pending-tokens rate]
+  (if (<= pending-tokens 0) 0 (long (/ pending-tokens rate))))
 
-(defn- try-acquire-sleep-ms [^TokenBucketRateLimiter rate-limiter permits max-wait-ms]
+(defn- acquire-sleep-ms
+  ^long [^TokenBucketRateLimiter rate-limiter permits]
+  (let [state (swap! (.-state rate-limiter) update :reserved-tokens + permits)]
+    (->sleep-ms (:reserved-tokens state) (.-rate rate-limiter))))
+
+(defn- try-acquire-sleep-ms
+  ^long [^TokenBucketRateLimiter rate-limiter permits max-wait-ms]
   (try
-    (let [{pending-tokens :reserved-tokens}
-          (swap! (.-state rate-limiter)
-                 (fn [state]
-                   (update state :reserved-tokens
-                           (fn [pending-tokens]
-                             ;; test if we can pass in wait period
-                             (if (<= (- (+ pending-tokens permits)
-                                        (* max-wait-ms (.-rate rate-limiter)))
-                                     0)
-                               (+ pending-tokens permits)
-                               (throw (ex-info "Not enough permits." {:rate-limiter true})))))))]
-      (if (<= pending-tokens 0)
-        0
-        (long (/ pending-tokens (.-rate rate-limiter)))))
-    (catch clojure.lang.ExceptionInfo _
-      false)))
+    (let [state (swap! (.-state rate-limiter)
+                       (fn [state]
+                         (update state :reserved-tokens
+                                 (fn [pending-tokens]
+                                   ;; test if we can pass in wait period
+                                   (if (<= (- (+ pending-tokens permits)
+                                              (* max-wait-ms (.-rate rate-limiter)))
+                                           0)
+                                     (+ pending-tokens permits)
+                                     (throw (ex-info "Not enough permits" {:rate-limiter true})))))))]
+      (->sleep-ms (:reserved-tokens state) (.-rate rate-limiter)))
+    (catch ExceptionInfo _)))
 
 (def ^{:const true :no-doc true}
   allowed-rate-limiter-option-keys

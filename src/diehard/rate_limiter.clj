@@ -1,6 +1,5 @@
 (ns diehard.rate-limiter
-  (:require [diehard.util :as u])
-  (:import [clojure.lang ExceptionInfo]))
+  (:require [diehard.util :as u]))
 
 (defprotocol IRateLimiter
   (acquire!
@@ -24,17 +23,14 @@
     (acquire! this 1))
   (acquire! [this permits]
     (refill this)
-    (let [sleep-ms (acquire-sleep-ms this permits)]
-      (sleep-fn sleep-ms)))
+    (acquire-sleep-ms this permits))
   (try-acquire [this]
     (try-acquire this 1))
   (try-acquire [this permits]
     (try-acquire this permits 0))
   (try-acquire [this permits wait-ms]
     (refill this)
-    (if-some [sleep-ms (try-acquire-sleep-ms this permits wait-ms)]
-      (do (sleep-fn sleep-ms) true)
-      false)))
+    (try-acquire-sleep-ms this permits wait-ms)))
 
 (defn- refill [^TokenBucketRateLimiter rate-limiter]
   (let [now (System/currentTimeMillis)]
@@ -53,12 +49,13 @@
   (if (<= pending-tokens 0) 0 (long (/ pending-tokens rate))))
 
 (defn- acquire-sleep-ms
-  ^long [^TokenBucketRateLimiter rate-limiter permits]
-  (let [state (swap! (.-state rate-limiter) update :reserved-tokens + permits)]
-    (->sleep-ms (:reserved-tokens state) (.-rate rate-limiter))))
+  [^TokenBucketRateLimiter rate-limiter permits]
+  (let [state (swap! (.-state rate-limiter) update :reserved-tokens + permits)
+        sleep-ms (->sleep-ms (:reserved-tokens state) (.-rate rate-limiter))]
+    ((.-sleep-fn rate-limiter) sleep-ms)))
 
 (defn- try-acquire-sleep-ms
-  ^long [^TokenBucketRateLimiter rate-limiter permits max-wait-ms]
+  [^TokenBucketRateLimiter rate-limiter permits max-wait-ms]
   (try
     (let [state (swap! (.-state rate-limiter)
                        (fn [state]
@@ -69,9 +66,15 @@
                                               (* max-wait-ms (.-rate rate-limiter)))
                                            0)
                                      (+ pending-tokens permits)
-                                     (throw (ex-info "Not enough permits" {:rate-limiter true})))))))]
-      (->sleep-ms (:reserved-tokens state) (.-rate rate-limiter)))
-    (catch ExceptionInfo _)))
+                                     (throw (ex-info "Not enough permits"
+                                                     {:rate-limiter true})))))))
+          sleep-ms (->sleep-ms (:reserved-tokens state) (.-rate rate-limiter))]
+      ((.-sleep-fn rate-limiter) sleep-ms)
+      true)
+    (catch Exception e
+      (if-not (:rate-limiter (ex-data e))
+        (throw e)
+        false))))
 
 (defn rate-limiter
   "Create a default rate limiter with:

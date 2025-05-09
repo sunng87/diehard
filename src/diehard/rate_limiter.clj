@@ -13,7 +13,7 @@
     "Try to acquire given number of permits, allows blocking for at most `wait-ms` milliseconds.
     Return true if there are enough permits in permitted time."))
 
-(declare refill acquire-sleep-ms try-acquire-sleep-ms)
+(declare refill do-acquire! do-try-acquire)
 
 (defrecord TokenBucketRateLimiter [rate max-tokens
                                    ;; internal state
@@ -23,14 +23,14 @@
     (acquire! this 1))
   (acquire! [this permits]
     (refill this)
-    (acquire-sleep-ms this permits))
+    (do-acquire! this permits))
   (try-acquire [this]
     (try-acquire this 1))
   (try-acquire [this permits]
     (try-acquire this permits 0))
   (try-acquire [this permits wait-ms]
     (refill this)
-    (try-acquire-sleep-ms this permits wait-ms)))
+    (do-try-acquire this permits wait-ms)))
 
 (defn- refill [^TokenBucketRateLimiter rate-limiter]
   (let [now (System/currentTimeMillis)]
@@ -48,13 +48,13 @@
 (defn- ->sleep-ms ^long [pending-tokens rate]
   (if (<= pending-tokens 0) 0 (long (/ pending-tokens rate))))
 
-(defn- acquire-sleep-ms
+(defn- do-acquire!
   [^TokenBucketRateLimiter rate-limiter permits]
   (let [state (swap! (.-state rate-limiter) update :reserved-tokens + permits)
         sleep-ms (->sleep-ms (:reserved-tokens state) (.-rate rate-limiter))]
     ((.-sleep-fn rate-limiter) sleep-ms)))
 
-(defn- try-acquire-sleep-ms
+(defn- do-try-acquire
   [^TokenBucketRateLimiter rate-limiter permits max-wait-ms]
   (try
     (let [state (swap! (.-state rate-limiter)

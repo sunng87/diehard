@@ -18,14 +18,14 @@
 
 (defrecord TokenBucketRateLimiter [rate max-tokens
                                    ;; internal state
-                                   state]
+                                   state sleep-fn]
   IRateLimiter
   (acquire! [this]
     (acquire! this 1))
   (acquire! [this permits]
     (refill this)
     (let [sleep-ms (acquire-sleep-ms this permits)]
-      (u/sleep sleep-ms)))
+      (sleep-fn sleep-ms)))
   (try-acquire [this]
     (try-acquire this 1))
   (try-acquire [this permits]
@@ -33,7 +33,7 @@
   (try-acquire [this permits wait-ms]
     (refill this)
     (if-some [sleep-ms (try-acquire-sleep-ms this permits wait-ms)]
-      (do (u/sleep sleep-ms) true)
+      (do (sleep-fn sleep-ms) true)
       false)))
 
 (defn- refill [^TokenBucketRateLimiter rate-limiter]
@@ -80,12 +80,15 @@
 (defn rate-limiter
   "Create a default rate limiter with:
   * `rate`: permits per second (may be a floating point, e.g. 0.5 <=> 1 req every 2 sec)
-  * `max-cached-tokens`: the max size of tokens that the bucket can cache when it's idle"
-  [{:keys [rate max-cached-tokens] :as _opts}]
+  * `max-cached-tokens`: the max size of tokens that the bucket can cache when it's idle
+  * `sleep-fn`: a unary fn for custom 'sleep' semantics, by default `diehard.util/sleep`"
+  [{:keys [rate max-cached-tokens sleep-fn] :as _opts}]
   (if (some? rate)
-    (let [max-cached-tokens (or max-cached-tokens (int rate))]
+    (let [max-cached-tokens (or max-cached-tokens (int rate))
+          sleep-fn (or sleep-fn u/sleep)]
       (TokenBucketRateLimiter. (/ (double rate) 1000)
                                max-cached-tokens
                                (atom {:reserved-tokens (double 0)
-                                      :last-refill-ts  (long -1)})))
+                                      :last-refill-ts  (long -1)})
+                               sleep-fn))
     (throw (IllegalArgumentException. ":rate is required for rate-limiter"))))

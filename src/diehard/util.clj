@@ -54,3 +54,7 @@
   (reify EventListener
     (accept [_ e]
       (f e))))
+
+(defn sleep [^long ms]
+  (when (pos? ms)
+    (Thread/sleep ms)))

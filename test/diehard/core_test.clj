@@ -2,7 +2,8 @@
   (:require [clojure.test :refer :all]
             [diehard.circuit-breaker :as cb]
             [diehard.core :refer :all])
-  (:import [dev.failsafe CircuitBreakerOpenException TimeoutExceededException]
+  (:import [clojure.lang IExceptionInfo]
+           [dev.failsafe CircuitBreakerOpenException TimeoutExceededException]
            [java.util.concurrent CountDownLatch]))
 
 (deftest test-retry
@@ -390,11 +391,12 @@
       (let [counter0 (atom 0)]
         (try
           (while (< @counter0 200)
-            (with-rate-limiter {:ratelimiter my-rl
+            (with-rate-limiter {:ratelimiter my-rl3
                                 :max-wait-ms 1}
               (my-fn counter0)))
           (is false)
           (catch Exception e
+            (is (instance? IExceptionInfo e))
             (is (:throttled (ex-data e))))))))
 
   (testing "permits"

@@ -52,7 +52,7 @@
   [^TokenBucketRateLimiter rate-limiter permits]
   (let [state (swap! (.-state rate-limiter) update :reserved-tokens + permits)
         sleep-ms (->sleep-ms (:reserved-tokens state) (.-rate rate-limiter))]
-    ((.-sleep-fn rate-limiter) sleep-ms)))
+    ((.-sleep-fn rate-limiter) (.-state rate-limiter) permits sleep-ms)))
 
 (defn- do-try-acquire
   [^TokenBucketRateLimiter rate-limiter permits max-wait-ms]
@@ -69,7 +69,7 @@
                                      (throw (ex-info "Not enough permits"
                                                      {:rate-limiter true})))))))
           sleep-ms (->sleep-ms (:reserved-tokens state) (.-rate rate-limiter))]
-      ((.-sleep-fn rate-limiter) sleep-ms)
+      ((.-sleep-fn rate-limiter) (.-state rate-limiter) permits sleep-ms)
       true)
     (catch Exception e
       (if-not (:rate-limiter (ex-data e))
@@ -80,11 +80,13 @@
   "Create a default rate limiter with:
   * `rate`: permits per second (may be a floating point, e.g. 0.5 <=> 1 req every 2 sec)
   * `max-cached-tokens`: the max size of tokens that the bucket can cache when it's idle
-  * `sleep-fn`: a unary fn for custom 'sleep' semantics, by default `diehard.util/sleep`"
+  * `sleep-fn`: a ternary fn of the current state, given permits and millis to sleep for
+                allowing for custom 'sleep' semantics; by default, calls `Thread/sleep`"
   [{:keys [rate max-cached-tokens sleep-fn] :as _opts}]
   (if (some? rate)
     (let [max-cached-tokens (or max-cached-tokens (int rate))
-          sleep-fn (or sleep-fn u/sleep)]
+          sleep-fn (or sleep-fn
+                       (fn [_state _permits ms] (u/sleep ms)))]
       (TokenBucketRateLimiter. (/ (double rate) 1000)
                                max-cached-tokens
                                (atom {:reserved-tokens (double 0)

@@ -1,5 +1,4 @@
-(ns diehard.rate-limiter
-  (:import [java.util.concurrent.locks LockSupport]))
+(ns diehard.rate-limiter)
 
 (defprotocol IRateLimiter
   (acquire!
@@ -80,17 +79,26 @@
   (when (pos? ms)
     (Thread/sleep ms)))
 
+(def ^:private nanos-in-ms 1000000)
+
 (defn uninterruptible-sleep [^long ms]
   (when (pos? ms)
-    (let [end-time-ns (+ (System/nanoTime) (* 1000000 ms))]
-      (loop [interrupted? false]
-        (let [remaining-ns (- end-time-ns (System/nanoTime))]
-          (if (<= remaining-ns 0)
-            (when interrupted?
-              (.interrupt (Thread/currentThread)))
-            (do
-              (LockSupport/parkNanos remaining-ns)
-              (recur (or interrupted? (Thread/interrupted))))))))))
+    (let [end-time-ns (+ (System/nanoTime) (* nanos-in-ms ms))]
+      (with-local-vars [interrupted? false]
+        (try (loop []
+               (let [remaining-ns (- end-time-ns (System/nanoTime))]
+                 ;; required sleep duration fully consumed — exit
+                 (when (< 0 remaining-ns)
+                   (try
+                     (Thread/sleep (quot remaining-ns nanos-in-ms)
+                                   (mod remaining-ns nanos-in-ms))
+                     ;; successful sleep — exit
+                     (catch InterruptedException _
+                       (var-set interrupted? true)))
+                   ;; can only recur from tail position
+                   (when @interrupted? (recur)))))
+             (finally
+               (when @interrupted? (.interrupt (Thread/currentThread)))))))))
 
 (defn rate-limiter
   "Create a default rate limiter with:

@@ -466,8 +466,9 @@ You can always check circuit breaker state with
   0.5 <=> 1 req every 2 sec)
 * `:max-cached-tokens` the max size of permit tokens that the bucket can cache
   when it's idle
-* `:sleep-fn` a fn of the current state, given permits and millis to sleep for
-  allowing for custom 'sleep' semantics; by default, calls `Thread/sleep`"}
+* `:sleep-fn` a unary fn of millis to sleep for, allowing for custom sleep
+  semantics; by default, sleeps interruptedly; pass `uninterruptible-sleep`
+  to sleep uninterruptedly"}
   defratelimiter [name opts]
   `(def ~name (rl/rate-limiter (u/verify-opt-map-keys-with-spec :rate-limiter/rate-limiter-new ~opts))))
 

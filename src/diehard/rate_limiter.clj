@@ -1,5 +1,5 @@
 (ns diehard.rate-limiter
-  (:require [diehard.util :as u]))
+  (:import [java.util.concurrent.locks LockSupport]))
 
 (defprotocol IRateLimiter
   (acquire!
@@ -52,7 +52,7 @@
   [^TokenBucketRateLimiter rate-limiter permits]
   (let [state (swap! (.-state rate-limiter) update :reserved-tokens + permits)
         sleep-ms (->sleep-ms (:reserved-tokens state) (.-rate rate-limiter))]
-    ((.-sleep-fn rate-limiter) (.-state rate-limiter) permits sleep-ms)))
+    ((.-sleep-fn rate-limiter) sleep-ms)))
 
 (defn- do-try-acquire
   [^TokenBucketRateLimiter rate-limiter permits max-wait-ms]
@@ -69,24 +69,40 @@
                                      (throw (ex-info "Not enough permits"
                                                      {:rate-limiter true})))))))
           sleep-ms (->sleep-ms (:reserved-tokens state) (.-rate rate-limiter))]
-      ((.-sleep-fn rate-limiter) (.-state rate-limiter) permits sleep-ms)
+      ((.-sleep-fn rate-limiter) sleep-ms)
       true)
     (catch Exception e
       (if-not (:rate-limiter (ex-data e))
         (throw e)
         false))))
 
+(defn interruptible-sleep [^long ms]
+  (when (pos? ms)
+    (Thread/sleep ms)))
+
+(defn uninterruptible-sleep [^long ms]
+  (when (pos? ms)
+    (let [end-time-ns (+ (System/nanoTime) (* 1000000 ms))]
+      (loop [interrupted? false]
+        (let [remaining-ns (- end-time-ns (System/nanoTime))]
+          (if (<= remaining-ns 0)
+            (when interrupted?
+              (.interrupt (Thread/currentThread)))
+            (do
+              (LockSupport/parkNanos remaining-ns)
+              (recur (or interrupted? (Thread/interrupted))))))))))
+
 (defn rate-limiter
   "Create a default rate limiter with:
   * `rate`: permits per second (may be a floating point, e.g. 0.5 <=> 1 req every 2 sec)
   * `max-cached-tokens`: the max size of tokens that the bucket can cache when it's idle
-  * `sleep-fn`: a ternary fn of the current state, given permits and millis to sleep for
-                allowing for custom 'sleep' semantics; by default, calls `Thread/sleep`"
+  * `sleep-fn`: a unary fn of millis to sleep for, allowing for custom sleep semantics;
+                by default, sleeps interruptedly; pass `uninterruptible-sleep` to sleep
+                uninterruptedly"
   [{:keys [rate max-cached-tokens sleep-fn] :as _opts}]
   (if (some? rate)
     (let [max-cached-tokens (or max-cached-tokens (int rate))
-          sleep-fn (or sleep-fn
-                       (fn [_state _permits ms] (u/sleep ms)))]
+          sleep-fn (or sleep-fn interruptible-sleep)]
       (TokenBucketRateLimiter. (/ (double rate) 1000)
                                max-cached-tokens
                                (atom {:reserved-tokens (double 0)

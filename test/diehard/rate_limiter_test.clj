@@ -48,7 +48,7 @@
                    (ExecutorService/.awaitTermination
                      pool timeout-ms TimeUnit/MILLISECONDS))
        :stop-fn  #(AtomicBoolean/.set stop? true)
-       :count    @counter})))
+       :counter  counter})))
 
 (defn- run-rate-limited-counting:interruption []
   (run-rate-limited-counting
@@ -83,11 +83,11 @@
               n-threads 32
               ;; tenfold be enough to cover up thread switching costs
               term-timeout-ms (* 10 (total-block-time rate n-threads))
-              {:keys [await-fn count]} ((run-rate-limited-counting:interruption)
-                                        rate-limiter n-threads run-time-sec)]
+              {:keys [await-fn counter]} ((run-rate-limited-counting:interruption)
+                                          rate-limiter n-threads run-time-sec)]
           (is (await-fn term-timeout-ms)
               "Terminates successfully, without timeout")
-          (is (approx== (* rate run-time-sec) count)
+          (is (approx== (* rate run-time-sec) @counter)
               "Count must be close to an expected value")))
       (testing "and custom running flag to stop tasks"
         (let [rate 1000
@@ -96,11 +96,11 @@
               n-threads 32
               ;; tenfold be enough to cover up thread switching costs
               term-timeout-ms (* 10 (total-block-time rate n-threads))
-              {:keys [await-fn count]} ((run-rate-limited-counting:custom-flag)
-                                        rate-limiter n-threads run-time-sec)]
+              {:keys [await-fn counter]} ((run-rate-limited-counting:custom-flag)
+                                          rate-limiter n-threads run-time-sec)]
           (is (await-fn term-timeout-ms)
               "Terminates successfully, without timeout")
-          (is (approx== (* rate run-time-sec) count)
+          (is (approx== (* rate run-time-sec) @counter)
               "Count must be close to an expected value")))
       (testing "when a task logic throws an exception"
         (let [rate 1000
@@ -109,11 +109,11 @@
               n-threads 32
               ;; tenfold be enough to cover up thread switching costs
               term-timeout-ms (* 10 (total-block-time rate n-threads))
-              {:keys [await-fn count]} ((run-rate-limited-counting:exception)
-                                        rate-limiter n-threads run-time-sec)]
+              {:keys [await-fn counter]} ((run-rate-limited-counting:exception)
+                                          rate-limiter n-threads run-time-sec)]
           (is (await-fn term-timeout-ms)
               "Terminates successfully, without timeout")
-          (is (approx== (* rate run-time-sec) count)
+          (is (approx== (* rate run-time-sec) @counter)
               "Count must be close to an expected value"))))
 
     (testing "with uninterruptible sleep"
@@ -125,16 +125,19 @@
               n-threads 32
               ;; tenfold be enough to cover up thread switching costs
               term-timeout-ms (* 10 (total-block-time rate n-threads))
-              {:keys [await-fn stop-fn count]} ((run-rate-limited-counting:interruption)
-                                                rate-limiter n-threads run-time-sec)]
+              {:keys [await-fn stop-fn counter]} ((run-rate-limited-counting:interruption)
+                                                  rate-limiter n-threads run-time-sec)]
+          ;; here we are forced to check the count before it's too late,
+          ;; since the task pool termination won't happen straight away
+          (is (approx== (* rate run-time-sec) @counter)
+              "Count must be close to an expected value")
+
           (is (false? (await-fn term-timeout-ms))
               "Cannot terminate due to (some) tasks still running")
-          ;; the only way to actually stop all running tasks
+          ;; the only way to actually stop all running tasks (isolation)
           (stop-fn)
           (is (await-fn term-timeout-ms)
-              "Terminates successfully, without timeout THIS TIME")
-          (is (approx== (* rate run-time-sec) count)
-              "Count must be close to an expected value")))
+              "Terminates successfully, without timeout THIS TIME")))
       (testing "and custom running flag to stop tasks"
         (let [rate 1000
               rate-limiter (rl/rate-limiter {:rate     rate
@@ -143,11 +146,11 @@
               n-threads 32
               ;; tenfold be enough to cover up thread switching costs
               term-timeout-ms (* 10 (total-block-time rate n-threads))
-              {:keys [await-fn count]} ((run-rate-limited-counting:custom-flag)
-                                        rate-limiter n-threads run-time-sec)]
+              {:keys [await-fn counter]} ((run-rate-limited-counting:custom-flag)
+                                          rate-limiter n-threads run-time-sec)]
           (is (await-fn term-timeout-ms)
               "Terminates successfully, without timeout")
-          (is (approx== (* rate run-time-sec) count)
+          (is (approx== (* rate run-time-sec) @counter)
               "Count must be close to an expected value")))
       (testing "when a task logic throws an exception"
         (let [rate 1000
@@ -157,11 +160,11 @@
               n-threads 32
               ;; tenfold be enough to cover up thread switching costs
               term-timeout-ms (* 10 (total-block-time rate n-threads))
-              {:keys [await-fn count]} ((run-rate-limited-counting:exception)
-                                        rate-limiter n-threads run-time-sec)]
+              {:keys [await-fn counter]} ((run-rate-limited-counting:exception)
+                                          rate-limiter n-threads run-time-sec)]
           (is (await-fn term-timeout-ms)
               "Terminates successfully, without timeout")
-          (is (approx== (* rate run-time-sec) count)
+          (is (approx== (* rate run-time-sec) @counter)
               "Count must be close to an expected value"))))))
 
 (deftest rate-limiter-at-low-rates-test
@@ -174,12 +177,12 @@
               n-threads 2
               ;; each thread will have to sleep for ≈2 seconds
               term-timeout-ms (total-block-time rate n-threads)
-              {:keys [await-fn count]} ((run-rate-limited-counting:interruption)
-                                        rate-limiter n-threads run-time-sec)]
+              {:keys [await-fn counter]} ((run-rate-limited-counting:interruption)
+                                          rate-limiter n-threads run-time-sec)]
           (is (await-fn term-timeout-ms)
               "Terminates successfully, without timeout")
           ;; exact error tolerance, since we are dealing with much slower ticks
-          (is (approx== (* rate run-time-sec) count 1)
+          (is (approx== (* rate run-time-sec) @counter 1)
               "Count must be close to an expected value")))
       (testing "and custom running flag to stop tasks"
         (let [rate 0.5
@@ -188,12 +191,12 @@
               n-threads 2
               ;; each thread will have to sleep for ≈2 seconds
               term-timeout-ms (total-block-time rate n-threads)
-              {:keys [await-fn count]} ((run-rate-limited-counting:custom-flag)
-                                        rate-limiter n-threads run-time-sec)]
+              {:keys [await-fn counter]} ((run-rate-limited-counting:custom-flag)
+                                          rate-limiter n-threads run-time-sec)]
           (is (await-fn term-timeout-ms)
               "Terminates successfully, without timeout")
           ;; exact error tolerance, since we are dealing with much slower ticks
-          (is (approx== (* rate run-time-sec) count 1)
+          (is (approx== (* rate run-time-sec) @counter 1)
               "Count must be close to an expected value")))
       (testing "when a task logic throws an exception"
         (let [rate 0.5
@@ -202,12 +205,12 @@
               n-threads 2
               ;; each thread will have to sleep for ≈2 seconds
               term-timeout-ms (total-block-time rate n-threads)
-              {:keys [await-fn count]} ((run-rate-limited-counting:exception)
-                                        rate-limiter n-threads run-time-sec)]
+              {:keys [await-fn counter]} ((run-rate-limited-counting:exception)
+                                          rate-limiter n-threads run-time-sec)]
           (is (await-fn term-timeout-ms)
               "Terminates successfully, without timeout")
           ;; exact error tolerance, since we are dealing with much slower ticks
-          (is (approx== (* rate run-time-sec) count 1)
+          (is (approx== (* rate run-time-sec) @counter 1)
               "Count must be close to an expected value"))))
 
     (testing "with uninterruptible sleep"
@@ -219,17 +222,20 @@
               n-threads 2
               ;; each thread will have to sleep for ≈2 seconds
               term-timeout-ms (total-block-time rate n-threads)
-              {:keys [await-fn stop-fn count]} ((run-rate-limited-counting:interruption)
-                                                rate-limiter n-threads run-time-sec)]
+              {:keys [await-fn stop-fn counter]} ((run-rate-limited-counting:interruption)
+                                                  rate-limiter n-threads run-time-sec)]
+          ;; here we are forced to check the count before it's too late,
+          ;; since the task pool termination won't happen straight away
+          ;; exact error tolerance, since we are dealing with much slower ticks
+          (is (approx== (* rate run-time-sec) @counter 1)
+              "Count must be close to an expected value")
+
           (is (false? (await-fn term-timeout-ms))
               "Cannot terminate due to (some) tasks still running")
-          ;; the only way to actually stop all running tasks
+          ;; the only way to actually stop all running tasks (isolation)
           (stop-fn)
           (is (await-fn term-timeout-ms)
-              "Terminates successfully, without timeout THIS TIME")
-          ;; exact error tolerance, since we are dealing with much slower ticks
-          (is (approx== (* rate run-time-sec) count 1)
-              "Count must be close to an expected value")))
+              "Terminates successfully, without timeout THIS TIME")))
       (testing "and custom running flag to stop tasks"
         (let [rate 0.5
               rate-limiter (rl/rate-limiter {:rate     rate
@@ -238,12 +244,12 @@
               n-threads 2
               ;; each thread will have to sleep for ≈2 seconds
               term-timeout-ms (total-block-time rate n-threads)
-              {:keys [await-fn count]} ((run-rate-limited-counting:custom-flag)
-                                        rate-limiter n-threads run-time-sec)]
+              {:keys [await-fn counter]} ((run-rate-limited-counting:custom-flag)
+                                          rate-limiter n-threads run-time-sec)]
           (is (await-fn term-timeout-ms)
               "Terminates successfully, without timeout")
           ;; exact error tolerance, since we are dealing with much slower ticks
-          (is (approx== (* rate run-time-sec) count 1)
+          (is (approx== (* rate run-time-sec) @counter 1)
               "Count must be close to an expected value")))
       (testing "when a task logic throws an exception"
         (let [rate 0.5
@@ -253,10 +259,10 @@
               n-threads 2
               ;; each thread will have to sleep for ≈2 seconds
               term-timeout-ms (total-block-time rate n-threads)
-              {:keys [await-fn count]} ((run-rate-limited-counting:exception)
-                                        rate-limiter n-threads run-time-sec)]
+              {:keys [await-fn counter]} ((run-rate-limited-counting:exception)
+                                          rate-limiter n-threads run-time-sec)]
           (is (await-fn term-timeout-ms)
               "Terminates successfully, without timeout")
           ;; exact error tolerance, since we are dealing with much slower ticks
-          (is (approx== (* rate run-time-sec) count 1)
+          (is (approx== (* rate run-time-sec) @counter 1)
               "Count must be close to an expected value"))))))

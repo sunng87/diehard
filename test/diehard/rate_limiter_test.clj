@@ -18,81 +18,52 @@
   ^Future [^ExecutorService executor ^Callable f]
   (ExecutorService/.submit executor f))
 
+(defn- run-rate-limited-counting
+  [rate-limiter run-time-sec]
+  (let [threads 32
+        pool (Executors/newFixedThreadPool threads)
+
+        counter (atom 0)]
+    (doseq [_ (range threads)]
+      (submit pool (fn []
+                     (while true
+                       (rl/acquire! rate-limiter)
+                       (swap! counter inc)))))
+    (Thread/sleep (Duration/ofSeconds run-time-sec))
+    (ExecutorService/.shutdown pool)
+    @counter))
+
 (deftest rate-limiter-test
-  (testing "base case"
+  (testing "high rates"
     (testing "interruptible sleep"
       (let [rate 1000
             rate-limiter (rl/rate-limiter {:rate rate})
-
-            threads 32
-            pool (Executors/newFixedThreadPool threads)
-
-            counter (atom 0)
-            time-secs 2]
-        (doseq [_ (range threads)]
-          (submit pool (fn []
-                         (while true
-                           (rl/acquire! rate-limiter)
-                           (swap! counter inc)))))
-        (Thread/sleep (Duration/ofSeconds time-secs))
-        (ExecutorService/.shutdown pool)
-        (is (approx== (* rate time-secs) @counter))))
+            time-sec 2
+            count (run-rate-limited-counting rate-limiter time-sec)]
+        (is (approx== (* rate time-sec) count))))
 
     (testing "uninterruptible sleep"
       (let [rate 1000
             rate-limiter (rl/rate-limiter {:rate     rate
                                            :sleep-fn rl/uninterruptible-sleep})
+            time-sec 2
+            count (run-rate-limited-counting rate-limiter time-sec)]
+        (is (approx== (* rate time-sec) count)))))
 
-            threads 32
-            pool (Executors/newFixedThreadPool threads)
-
-            counter (atom 0)
-            time-secs 2]
-        (doseq [_ (range threads)]
-          (submit pool (fn []
-                         (while true
-                           (rl/acquire! rate-limiter)
-                           (swap! counter inc)))))
-        (Thread/sleep (Duration/ofSeconds time-secs))
-        (ExecutorService/.shutdown pool)
-        (is (approx== (* rate time-secs) @counter)))))
-
-  (testing "rate less than 1.0"
+  (testing "low rates (less than 1.0)"
     (testing "interruptible sleep"
       (let [rate 0.5
             rate-limiter (rl/rate-limiter {:rate rate})
-
-            threads 32
-            pool (Executors/newFixedThreadPool threads)
-
-            counter (atom 0)
-            time-secs 5]
-        (doseq [_ (range threads)]
-          (submit pool (fn []
-                         (while true
-                           (rl/acquire! rate-limiter)
-                           (swap! counter inc)))))
-        (Thread/sleep (Duration/ofSeconds time-secs))
-        (ExecutorService/.shutdown pool)
+            time-sec 5
+            count (run-rate-limited-counting rate-limiter time-sec)]
         ;; exact error tolerance, since we are dealing with much slower ticks
-        (is (approx== (* rate time-secs) @counter 1))))
+        (is (approx== (* rate time-sec) count 1))))
 
     (testing "uninterruptible sleep"
       (let [rate 0.5
             rate-limiter (rl/rate-limiter {:rate     rate
                                            :sleep-fn rl/uninterruptible-sleep})
-
-            threads 32
-            pool (Executors/newFixedThreadPool threads)
-
-            counter (atom 0)
-            time-secs 5]
-        (doseq [_ (range threads)]
-          (submit pool (fn []
-                         (while true
-                           (rl/acquire! rate-limiter)
-                           (swap! counter inc)))))
-        (Thread/sleep (Duration/ofSeconds time-secs))
-        (ExecutorService/.shutdown pool)
+            time-sec 5
+            count (run-rate-limited-counting rate-limiter time-sec)]
         ;; exact error tolerance, since we are dealing with much slower ticks
-        (is (approx== (* rate time-secs) @counter 1))))))
+        (is (approx== (* rate time-sec) count 1))))))

@@ -47,32 +47,32 @@
       (do-shutdown! pool)
       {:await-fn (fn [timeout-ms]
                    (ExecutorService/.awaitTermination
-                     pool timeout-ms TimeUnit/MILLISECONDS))
+                    pool timeout-ms TimeUnit/MILLISECONDS))
        :stop-fn  #(AtomicBoolean/.set stop? true)
        :counter  counter})))
 
 (defn- run-rate-limited-counting:interruption []
   (run-rate-limited-counting
-    :proceed-run? (constantly true)
-    :do-shutdown! ExecutorService/.shutdownNow))
+   :proceed-run? (constantly true)
+   :do-shutdown! ExecutorService/.shutdownNow))
 
 (defn- run-rate-limited-counting:custom-flag []
   (let [running? (AtomicBoolean. true)]
     (run-rate-limited-counting
-      :proceed-run? #(AtomicBoolean/.get running?)
-      :do-shutdown! (fn [pool]
-                      (AtomicBoolean/.set running? false)
-                      (ExecutorService/.shutdown pool)))))
+     :proceed-run? #(AtomicBoolean/.get running?)
+     :do-shutdown! (fn [pool]
+                     (AtomicBoolean/.set running? false)
+                     (ExecutorService/.shutdown pool)))))
 
 (defn- run-rate-limited-counting:exception []
   (let [throw? (AtomicBoolean. false)]
     (run-rate-limited-counting
-      :proceed-run? #(if (AtomicBoolean/.get throw?)
-                       (throw (Exception. "Task failed!"))
-                       true)
-      :do-shutdown! (fn [pool]
-                      (AtomicBoolean/.set throw? true)
-                      (ExecutorService/.shutdown pool)))))
+     :proceed-run? #(if (AtomicBoolean/.get throw?)
+                      (throw (Exception. "Task failed!"))
+                      true)
+     :do-shutdown! (fn [pool]
+                     (AtomicBoolean/.set throw? true)
+                     (ExecutorService/.shutdown pool)))))
 
 (deftest rate-limiter-at-high-rates-test
   (testing "high rates"

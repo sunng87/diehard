@@ -98,7 +98,8 @@
                    ;; can only recur from tail position
                    (when @interrupted? (recur)))))
              (finally
-               (when @interrupted? (.interrupt (Thread/currentThread)))))))))
+               (when @interrupted?
+                 (Thread/.interrupt (Thread/currentThread)))))))))
 
 (defn rate-limiter
   "Create a default rate limiter with:

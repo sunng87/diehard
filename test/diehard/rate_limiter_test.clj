@@ -15,7 +15,7 @@
   ([expected actual tolerance]
    (< (abs (- expected actual)) tolerance)))
 
-(defn- total-wait-time
+(defn- total-block-time
   [rate n-threads]
   (long (* (/ 1.0 rate) n-threads 1000)))
 
@@ -68,7 +68,7 @@
               run-time-sec 2
               n-threads 32
               ;; tenfold be enough to cover up thread switching costs
-              term-timeout-ms (* 10 (total-wait-time rate n-threads))
+              term-timeout-ms (* 10 (total-block-time rate n-threads))
               {:keys [await-fn count]} ((run-rate-limited-counting:interruption)
                                         rate-limiter n-threads run-time-sec)]
           (is (await-fn term-timeout-ms)
@@ -81,7 +81,7 @@
               run-time-sec 2
               n-threads 32
               ;; tenfold be enough to cover up thread switching costs
-              term-timeout-ms (* 10 (total-wait-time rate n-threads))
+              term-timeout-ms (* 10 (total-block-time rate n-threads))
               {:keys [await-fn count]} ((run-rate-limited-counting:custom-flag)
                                         rate-limiter n-threads run-time-sec)]
           (is (await-fn term-timeout-ms)
@@ -97,7 +97,7 @@
               run-time-sec 2
               n-threads 32
               ;; tenfold be enough to cover up thread switching costs
-              term-timeout-ms (* 10 (total-wait-time rate n-threads))
+              term-timeout-ms (* 10 (total-block-time rate n-threads))
               {:keys [await-fn throw-fn count]} ((run-rate-limited-counting:interruption)
                                                  rate-limiter n-threads run-time-sec)]
           (is (false? (await-fn term-timeout-ms))
@@ -115,7 +115,7 @@
               run-time-sec 2
               n-threads 32
               ;; tenfold be enough to cover up thread switching costs
-              term-timeout-ms (* 10 (total-wait-time rate n-threads))
+              term-timeout-ms (* 10 (total-block-time rate n-threads))
               {:keys [await-fn count]} ((run-rate-limited-counting:custom-flag)
                                         rate-limiter n-threads run-time-sec)]
           (is (await-fn term-timeout-ms)
@@ -132,7 +132,7 @@
               run-time-sec 5
               n-threads 2
               ;; each thread will have to sleep for ≈2 seconds
-              term-timeout-ms (total-wait-time rate n-threads)
+              term-timeout-ms (total-block-time rate n-threads)
               {:keys [await-fn count]} ((run-rate-limited-counting:interruption)
                                         rate-limiter n-threads run-time-sec)]
           (is (await-fn term-timeout-ms)
@@ -146,7 +146,7 @@
               run-time-sec 5
               n-threads 2
               ;; each thread will have to sleep for ≈2 seconds
-              term-timeout-ms (total-wait-time rate n-threads)
+              term-timeout-ms (total-block-time rate n-threads)
               {:keys [await-fn count]} ((run-rate-limited-counting:custom-flag)
                                         rate-limiter n-threads run-time-sec)]
           (is (await-fn term-timeout-ms)
@@ -163,7 +163,7 @@
               run-time-sec 5
               n-threads 2
               ;; each thread will have to sleep for ≈2 seconds
-              term-timeout-ms (total-wait-time rate n-threads)
+              term-timeout-ms (total-block-time rate n-threads)
               {:keys [await-fn throw-fn count]} ((run-rate-limited-counting:interruption)
                                                  rate-limiter n-threads run-time-sec)]
           (is (false? (await-fn term-timeout-ms))
@@ -182,7 +182,7 @@
               run-time-sec 5
               n-threads 2
               ;; each thread will have to sleep for ≈2 seconds
-              term-timeout-ms (total-wait-time rate n-threads)
+              term-timeout-ms (total-block-time rate n-threads)
               {:keys [await-fn count]} ((run-rate-limited-counting:custom-flag)
                                         rate-limiter n-threads run-time-sec)]
           (is (await-fn term-timeout-ms)

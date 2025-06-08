@@ -1,8 +1,7 @@
 (ns diehard.rate-limiter-test
   (:require [clojure.test :refer [deftest testing is]]
             [diehard.rate-limiter :as rl])
-  (:import [java.time Duration]
-           [java.util.concurrent ExecutorService Executors Future TimeUnit]
+  (:import [java.util.concurrent ExecutorService Executors Future TimeUnit]
            [java.util.concurrent.atomic AtomicBoolean]))
 
 (def default-error
@@ -43,7 +42,7 @@
                          (catch Exception ex
                            (when-not (= ::stop (:type (ex-data ex)))
                              (throw ex)))))))
-      (Thread/sleep (Duration/ofSeconds run-time-sec))
+      (Thread/sleep ^long (* 1000 run-time-sec))
       (do-shutdown! pool)
       {:await-fn (fn [timeout-ms]
                    (ExecutorService/.awaitTermination

@@ -6,7 +6,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: DeLaGuardo/setup-clojure@master
         with:
           cli: "latest"
@@ -22,6 +22,6 @@ jobs:
   antq:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: antq
         uses: liquidz/antq-action@main

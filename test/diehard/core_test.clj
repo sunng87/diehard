@@ -72,6 +72,17 @@
       (when (= *executions* 1)
         (>= (- *elapsed-time-ms* *start-time-ms*) 100))
       *executions*))
+  (testing "delay-fn"
+    (with-retry {:retry-if (fn [v e] (< v 3))
+                 :delay-fn (fn [v e] (cond
+                                       (= 1 v) 10
+                                       (= 2 v) 20
+                                       :else 0))}
+      (when (= *executions* 1)
+        (>= (- *elapsed-time-ms* *start-time-ms*) 10))
+      (when (= *executions* 1)
+        (>= (- *elapsed-time-ms* *start-time-ms*) 30))
+      *executions*))
   (testing "duration"
     (try
       (with-retry {:delay-ms 20

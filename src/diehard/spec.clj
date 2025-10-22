@@ -41,6 +41,7 @@
 (s/def :retry/max-retries int?)
 (s/def :retry/max-duration-ms int?)
 (s/def :retry/delay-ms int?)
+(s/def :retry/delay-fn fn?)
 
 (s/def :retry/jitter-factor double?)
 (s/def :retry/jitter-ms int?)
@@ -62,6 +63,7 @@
                       :retry/abort-if :retry/abort-on :retry/abort-when
                       :retry/backoff-ms :retry/max-retries :retry/max-duration-ms
                       :retry/delay-ms :retry/jitter-factor :retry/jitter-ms
+                      :retry/delay-fn
 
                       :retry/on-abort :retry/on-complete :retry/on-failed-attempt
                       :retry/on-failure :retry/on-retry :retry/on-retries-exceeded
@@ -73,6 +75,7 @@
                       :retry/abort-if :retry/abort-on :retry/abort-when
                       :retry/backoff-ms :retry/max-retries :retry/max-duration-ms
                       :retry/delay-ms :retry/jitter-factor :retry/jitter-ms
+                      :retry/delay-fn
 
                       :retry/on-abort :retry/on-complete :retry/on-failed-attempt
                       :retry/on-failure :retry/on-retry :retry/on-retries-exceeded

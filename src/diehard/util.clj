@@ -1,8 +1,16 @@
 (ns ^:no-doc diehard.util
-  (:require [clojure.spec.alpha :as s])
-  (:import [dev.failsafe.function CheckedRunnable CheckedConsumer
-            CheckedFunction CheckedSupplier CheckedBiPredicate CheckedPredicate]
-           [dev.failsafe.event EventListener]))
+  (:require
+   [clojure.spec.alpha :as s])
+  (:import
+   [dev.failsafe.event EventListener]
+   [dev.failsafe.function
+    CheckedBiPredicate
+    CheckedConsumer
+    CheckedFunction
+    CheckedPredicate
+    CheckedRunnable
+    CheckedSupplier
+    ContextualSupplier]))
 
 (defn verify-opt-map-keys [opt-map allowed-keys]
   (doseq [k (keys opt-map)]
@@ -49,6 +57,10 @@
 
 (defn as-vector [v]
   (if (vector? v) v [v]))
+
+(defn fn-as-contextual-supplier [f]
+  (reify ContextualSupplier
+    (get [_ t] (f t))))
 
 (defn wrap-event-listener [f]
   (reify EventListener

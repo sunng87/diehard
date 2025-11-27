@@ -98,6 +98,14 @@
     (when-let [jitter (:jitter-ms policy-map)]
       (.withJitter policy (Duration/ofMillis jitter)))
 
+    (when-let [delay-fn (:delay-fn policy-map)]
+      (.withDelayFn policy
+                    (u/fn-as-contextual-supplier
+                     (fn [^ExecutionContext event]
+                       (with-context event
+                         (Duration/ofMillis (delay-fn (.getLastResult event)
+                                                      (.getLastException event))))))))
+
     ;; events
     (when-let [on-abort (:on-abort policy-map)]
       (.onAbort policy
@@ -178,6 +186,8 @@
   multiplier]` to control the delay between each retry, the delay for
   **n**th retry will be `(min (* initial-delay-ms (expt 2 (- n 1))) max-delay-ms)`
 * `:delay-ms` use constant delay between each retry
+* `:delay-fn` accepts a function which takes `result`, `exception` as
+  arguments, and returns a delay in ms
 * `:jitter-factor` random factor for each delay
 * `:jitter-ms` random time `(-jitter-ms, jitter-ms)` adds to each delay
 
@@ -257,6 +267,8 @@ the last execution. If `:circuit-breaker` is set, it will throw
   multiplier]` to control the delay between each retry, the delay for
   **n**th retry will be `(min (* initial-delay-ms (expt 2 (- n 1))) max-delay-ms)`
 * `:delay-ms` use constant delay between each retry
+* `:delay-fn` accepts a function which takes `result`, `exception` as
+  arguments, and returns a delay in ms
 * `:jitter-factor` random factor for each delay
 * `:jitter-ms` random time `(-jitter-ms, jitter-ms)` adds to each delay
 

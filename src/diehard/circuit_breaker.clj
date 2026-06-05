@@ -76,3 +76,13 @@ on current state:
   * `:half-open` only allows some of execution requests"
   [^CircuitBreaker cb]
   (.tryAcquirePermit cb))
+
+(defn record-success!
+  "Record a successful execution on this circuit breaker."
+  [^CircuitBreaker cb]
+  (.recordSuccess cb))
+
+(defn record-failure!
+  "Record a failed execution on this circuit breaker."
+  [^CircuitBreaker cb]
+  (.recordFailure cb))

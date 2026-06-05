@@ -14,7 +14,7 @@
 
     :fail-if :fail-on :fail-when
 
-    :on-open :on-close :on-half-open :on-complete})
+    :on-open :on-close :on-half-open})
 
 (defn circuit-breaker [opts]
   (u/verify-opt-map-keys-with-spec :circuit-breaker/circuit-breaker opts)
